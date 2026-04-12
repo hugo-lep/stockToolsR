@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+inst/dev/
+inst/data_db/
+inst/app/data/config_s3_location.rds
+inst/app/data/config_s3_access.rds
+inst/R_temp/
+inst/script_temp/
+CLAUDE.md
