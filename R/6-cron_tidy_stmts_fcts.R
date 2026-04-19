@@ -48,9 +48,8 @@ tidy_stmts <- function(con,
     df |> dplyr::rename_with(~ paste0(prefix, .x), dplyr::all_of(cols))
   }
 
-  # ---------------------------------------------------------------------------
   # Income statement
-  # ---------------------------------------------------------------------------
+
 
   # Colonnes exclues du rolling sum IS (générales + actions en circulation)
   cols_no_roll_is <- c(
@@ -91,9 +90,9 @@ tidy_stmts <- function(con,
     ) |>
     rename_with_prefix(cols = keep_cols_is, prefix = "is_")
 
-  # ---------------------------------------------------------------------------
+
   # Balance sheet (snapshot — pas de rolling sum)
-  # ---------------------------------------------------------------------------
+
 
   bs_fy <- dplyr::tbl(con, "fy_balance_stmts_orig") |> dplyr::collect()
 
@@ -115,9 +114,9 @@ tidy_stmts <- function(con,
     dplyr::arrange(symbol, dplyr::desc(date)) |>
     rename_with_prefix(cols = keep_cols_bs, prefix = "bs_")
 
-  # ---------------------------------------------------------------------------
+
   # Cash flow
-  # ---------------------------------------------------------------------------
+
 
   cf_fy <- dplyr::tbl(con, "fy_cf_stmts_orig") |>
     dplyr::collect() |>
@@ -158,7 +157,31 @@ tidy_stmts <- function(con,
   final <- income |>
     dplyr::left_join(balance,  by = c("date", "symbol")) |>
     dplyr::left_join(cashflow, by = c("date", "symbol")) |>
-    dplyr::arrange(symbol, dplyr::desc(date))
+    dplyr::arrange(symbol, dplyr::desc(date)) |>
+    dplyr::distinct(symbol, date, .keep_all = TRUE) |>
+    dplyr::mutate(
+      caf    = is_netincome + is_depreciationandamortization + cf_stockbasedcompensation,
+      # Normaliser Q4 → FY (les deux sont équivalents : rapport annuel)
+      period = dplyr::if_else(period == "Q4", "FY", period)
+    )
+
+  # Pour chaque symbol, détecter la period de la ligne la plus récente
+  period_ref <- final |>
+    dplyr::group_by(symbol) |>
+    dplyr::slice_max(date, n = 1, with_ties = FALSE) |>
+    dplyr::ungroup() |>
+    dplyr::select(symbol, period_ref = period)
+
+  # Ne conserver que les lignes dont la period correspond à la référence
+  final <- final |>
+    dplyr::left_join(period_ref, by = "symbol") |>
+    dplyr::filter(period == period_ref) |>
+    dplyr::select(-period_ref)
+
+  final <- final |>
+    mutate(m_brut = is_grossprofit / is_revenue,
+           m_ebitda = is_ebitda / is_revenue,
+           m_net = is_netincome / is_revenue)
 
   DBI::dbWriteTable(con, "financial_stmts_build", final, overwrite = TRUE)
   message(nrow(final), " ligne(s) écrite(s) dans financial_stmts_build.")

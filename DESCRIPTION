@@ -15,13 +15,21 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Imports: 
+    bsicons,
+    bslib,
     DBI,
     dplyr,
+    ggplot2,
+    glue,
     httr,
     jsonlite,
     lubridate,
     magrittr,
     purrr,
+    rlang,
+    s3db,
+    scales,
+    shiny,
     slider,
     tibble,
     tidyquant,

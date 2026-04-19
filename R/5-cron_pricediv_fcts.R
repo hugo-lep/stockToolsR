@@ -31,7 +31,7 @@
 #' }
 update_stockprice <- function(con, symbols) {
 
-  to_date <- Sys.Date() - 1
+  to_date <- Sys.Date()
 
   # dates max déjà en base pour les symboles demandés
   existing_dates <- dplyr::tbl(con, "stockprice") |>
@@ -52,7 +52,8 @@ update_stockprice <- function(con, symbols) {
       message("Mise à jour de ", length(existing_symbols), " ticker(s) depuis le ", from_date, "...")
 
       df_new <- tidyquant::tq_get(existing_symbols, from = from_date, to = to_date) |>
-        dplyr::select(-adjusted)
+        dplyr::select(-adjusted) %>%
+        filter(date != to_date)
 
       df_existing_keys <- dplyr::tbl(con, "stockprice") |>
         dplyr::filter(symbol %in% !!existing_symbols, date >= !!from_date) |>
@@ -79,7 +80,8 @@ update_stockprice <- function(con, symbols) {
             paste(missing_symbols, collapse = ", "))
 
     df_new <- tidyquant::tq_get(missing_symbols, from = from_date_new, to = to_date) |>
-      dplyr::select(-adjusted)
+      dplyr::select(-adjusted) %>%
+      filter(date != to_date)
 
     if (!is.null(df_new) && nrow(df_new) > 0) {
       DBI::dbWriteTable(con, "stockprice", df_new, append = TRUE)

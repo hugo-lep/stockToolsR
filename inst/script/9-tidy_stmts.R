@@ -21,11 +21,12 @@ keep_cols_is <- c(
 # Colonnes balance sheet
 keep_cols_bs <- c(
   "totalcurrentassets", "totalnoncurrentassets", "totalassets",
-  "totalcurrentliabilities", "totalnoncurrentliabilities", "totalliabilities"
+  "totalcurrentliabilities", "totalnoncurrentliabilities", "totalliabilities", "totalstockholdersequity"
 )
 
 # Colonnes cash flow
 keep_cols_cf <- c(
+  "stockbasedcompensation",
   "netcashprovidedbyoperatingactivities",
   "netcashprovidedbyinvestingactivities",
   "netcashprovidedbyfinancingactivities",

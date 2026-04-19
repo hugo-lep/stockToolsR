@@ -13,7 +13,7 @@ tickers_scope <- setdiff(tickers, non_available_stockprice)
 latest_market_date <- tq_get("AAPL",
                               get  = "stock.prices",
                               from = today - 7,
-                              to   = today - 1) |>
+                              to   = today) |>
   dplyr::pull(date) |>
   max()
 

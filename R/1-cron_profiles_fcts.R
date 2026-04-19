@@ -170,3 +170,49 @@ cies_profile_build <- function(con) {
 
   invisible(data)
 }
+#' Get symbols from FMP company screener
+#'
+#' @description
+#' Récupère une liste de tickers filtrés (exchange, market cap, etc.)
+#' depuis l’API Financial Modeling Prep.
+#'
+#' @param key_fmp_api Clé API Financial Modeling Prep
+#' @param exchange Exchange (ex: "NASDAQ", "NYSE", "AMEX")
+#' @param country Pays (ex: "US")
+#' @param limit Nombre max de résultats (max recommandé: 10000)
+#'
+#' @return Un data.frame ou NULL
+#'
+#' @export
+fmp_company_screener <- function(
+    key_fmp_api,
+    exchange = "NASDAQ",
+    country = "US",
+    limit = 10000
+) {
+
+  res <- tryCatch(
+    httr::GET(
+      url = "https://financialmodelingprep.com/stable/company-screener",
+      query = list(
+        exchange = exchange,
+        country = country,
+        isEtf = FALSE,
+        isFund = FALSE,
+        isActivelyTrading = TRUE,
+        limit = limit,
+        apikey = key_fmp_api
+      )
+    ),
+    error = function(e) NULL
+  )
+
+  if (is.null(res) || httr::status_code(res) != 200) {
+    return(NULL)
+  }
+
+  tryCatch(
+    jsonlite::fromJSON(rawToChar(res$content)),
+    error = function(e) NULL
+  )
+}

@@ -63,7 +63,7 @@ detect_and_insert_splits <- function(tickers,con, fmp_api_key) {
   from  <- format(today - 10, "%Y-%m-%d")
   to    <- format(today + 10, "%Y-%m-%d")
 
-  message(glue("🔍 Détection splits du {from} au {to}..."))
+  message(glue::glue("🔍 Détection splits du {from} au {to}..."))
 
   # --- Appel API ---
   splits_raw <- fmp_splits_calendar_get(fmp_api_key, from = from, to = to)
@@ -87,7 +87,7 @@ detect_and_insert_splits <- function(tickers,con, fmp_api_key) {
     return(invisible(NULL))
   }
 
-  message(glue("📋 {nrow(splits)} split(s) détecté(s) pour le S&P 500."))
+  message(glue::glue("📋 {nrow(splits)} split(s) détecté(s) pour le S&P 500."))
 
   # --- Insérer en pending (ON CONFLICT DO NOTHING) ---
 
@@ -97,7 +97,7 @@ detect_and_insert_splits <- function(tickers,con, fmp_api_key) {
     VALUES ($1, $2, $3, 'pending', CURRENT_DATE)
     ON CONFLICT (symbol, split_date) DO NOTHING;
   ", params = list(symbol, as.character(split_date), split_ratio))
-    message(glue("  ✔ {symbol} | {split_date} | ratio {split_ratio}"))
+    message(glue::glue("  ✔ {symbol} | {split_date} | ratio {split_ratio}"))
   })
 
   message("✔ Détection splits terminée.")

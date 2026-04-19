@@ -11,6 +11,10 @@ Améliorations identifiées durant le développement, à traiter ultérieurement
   - `filter(symbol %in% symbols)` avant `collect()` dans chaque table
   - Remplacer `overwrite = TRUE` par un upsert sur `financial_stmts_build`
 
+- [ ] `valuation_stockprice()` : recalculer uniquement les tickers mis à jour ce jour-là
+  - Même logique que `tidy_stmts()` : passer `symbols_updated`
+  - Les 8 appels `slide_index_dbl()` sur données quotidiennes sont le bloc le plus lourd
+
 - [ ] `1-profiles.R` : `cies_profile_build()` reconstruite entièrement à chaque run
   - Remplacer par un upsert ciblé sur les 3 profils rafraîchis seulement
 

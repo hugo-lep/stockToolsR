@@ -4,17 +4,21 @@
 \alias{get_pending_splits}
 \title{Récupérer les splits "pending" à traiter}
 \usage{
-get_pending_splits(con, horizon_days = 2)
+get_pending_splits(con, horizon_days = -1)
 }
 \arguments{
 \item{con}{Objet `DBIConnection`}
 
-\item{horizon_days}{Nombre de jours à regarder dans le futur (par défaut 2)}
+\item{horizon_days}{Décalage en jours par rapport à aujourd'hui (par défaut -1)}
 }
 \value{
-`data.frame` contenant les splits pending triés par `split_date`
+`data.frame` contenant les splits pending triés par `split_date` croissant.
 }
 \description{
 Retourne les splits dont le statut est `"pending"` et dont la date de split
-est inférieure ou égale à `CURRENT_DATE + horizon_days`.
+est inférieure ou égale à aujourd'hui + `horizon_days`.
+
+Utiliser `horizon_days = -1` (défaut) pour ne traiter que les splits survenus
+**avant aujourd'hui**, afin de laisser le temps aux fournisseurs de données
+(Yahoo Finance, FMP) d'ajuster leurs prix historiques avant le nettoyage.
 }
