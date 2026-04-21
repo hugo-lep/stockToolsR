@@ -1,6 +1,6 @@
-# =============================================================================
-# mod_finance.R — Module Shiny : analyse boursière S&P 500
-#
+          # ========================================================
+          # mod_finance.R — Module Shiny : analyse boursière S&P 500
+          #
 # Exporte deux fonctions :
 #   mod_finance_ui(id)       — panneaux nav à insérer dans un page_navbar()
 #   mod_finance_server(id, con) — logique serveur (nécessite une connexion DBI)
@@ -340,6 +340,8 @@ mod_finance_server <- function(id, con) {
     # -------------------------------------------------------------------------
 
     df_filtres <- shiny::reactive({
+      shiny::req(input$secteur_f, input$ratio_max_f,
+                 input$seuil_revenue, input$seuil_ebitda, input$seuil_eps)
       df <- base_data
       if (input$secteur_f != "Tous")
         df <- df |> dplyr::filter(sector == input$secteur_f)
