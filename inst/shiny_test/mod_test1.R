@@ -32,19 +32,12 @@ con <- dbConnect(
 dbListTables(con)
 # ── Application test ──────────────────────────────────────────────────────────
 
-# mod_finance_ui() retourne un tagList de nav_panel.
-# do.call() les passe comme arguments séparés à page_navbar()
-# (page_navbar n'accepte pas un tagList comme argument unique).
-ui <- do.call(
-  bslib::page_navbar,
-  c(
-    list(
-      title = "Test \u2014 module finance",
-      theme = bslib::bs_theme(bootswatch = "flatly",
-                              base_font  = bslib::font_google("Inter"))
-    ),
-    mod_finance_ui("finance")
-  )
+# mod_finance_ui() retourne un navset_bar() autonome — on l'imbrique
+# directement dans page_fluid() sans do.call.
+ui <- bslib::page_fluid(
+  theme = bslib::bs_theme(bootswatch = "flatly",
+                          base_font  = bslib::font_google("Inter")),
+  mod_finance_ui("finance")
 )
 
 server <- function(input, output, session) {

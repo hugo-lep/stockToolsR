@@ -44,6 +44,7 @@ on.exit(dbDisconnect(con), add = TRUE)
 
 message("=== Début du cron : ", today, " ===")
 
+start_time <- Sys.time()
 dbListTables(con)
 source("inst/script/1-profiles.R")
 source("inst/script/2-splits_detection.R")
@@ -58,6 +59,7 @@ source("inst/script/8-dividends.R")
 source("inst/script/9-tidy_stmts.R")
 source("inst/script/10-ratios.R")
 
+cat("temps de traitement",Sys.time() - start_time)
 message("=== Fin du cron : ", today, " ===")
 
 

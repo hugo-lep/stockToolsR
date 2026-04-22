@@ -87,16 +87,16 @@
 
 #' UI du module analyse boursière
 #'
-#' Retourne un `tagList` de deux `nav_panel` (Filtres + Résultats) à insérer
-#' dans un `bslib::page_navbar()`.
+#' Retourne un `bslib::navset_bar()` autonome (deux onglets : Filtres + Résultats)
+#' à insérer dans n'importe quel conteneur de page (ex: `bslib::page_fluid()`).
 #'
 #' @param id Identifiant du module (chaîne de caractères)
 #'
-#' @return `tagList` contenant deux `bslib::nav_panel`
+#' @return Un `bslib::navset_bar` contenant deux `bslib::nav_panel`
 #'
-#' @importFrom shiny NS tagList tags textOutput tableOutput uiOutput plotOutput
+#' @importFrom shiny NS tags textOutput tableOutput uiOutput plotOutput
 #'   selectInput sliderInput radioButtons checkboxGroupInput
-#' @importFrom bslib nav_panel layout_sidebar sidebar card card_header
+#' @importFrom bslib navset_bar nav_panel layout_sidebar sidebar card card_header
 #'   card_body layout_columns
 #' @importFrom bsicons bs_icon
 #'
@@ -104,7 +104,7 @@
 mod_finance_ui <- function(id) {
   ns <- shiny::NS(id)
 
-  shiny::tagList(
+  bslib::navset_bar(
 
     # ── Onglet 1 : Filtres ───────────────────────────────────────────────────
     bslib::nav_panel(
@@ -113,6 +113,7 @@ mod_finance_ui <- function(id) {
 
       bslib::layout_sidebar(
         sidebar = bslib::sidebar(
+          open  = "always",
           width = 260,
 
           shiny::selectInput(ns("secteur_f"), "Secteur :",
@@ -160,6 +161,7 @@ mod_finance_ui <- function(id) {
 
       bslib::layout_sidebar(
         sidebar = bslib::sidebar(
+          open  = "always",
           width = 230,
 
           shiny::selectInput(ns("symbol"), "Compagnie :", choices = NULL),
