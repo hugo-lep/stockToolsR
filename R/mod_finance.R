@@ -333,14 +333,14 @@ mod_finance_server <- function(id, con) {
                                      ~ median(.x, na.rm = TRUE)),
                        .groups = "drop")
 
-    # Peupler le filtre secteur après le premier flush (évite les problèmes
-    # de timing lorsque le module est chargé depuis un package installé)
+    # Peupler le filtre secteur dès que l'input existe côté client
+    # (observeEvent attend que secteur_f soit rendu, robuste au lazy rendering)
     secteurs <- c("Tous", sort(unique(na.omit(base_data$sector))))
-    session$onFlushed(function() {
+    shiny::observeEvent(input$secteur_f, {
       shiny::updateSelectInput(session, "secteur_f",
                                choices  = secteurs,
                                selected = "Tous")
-    }, once = TRUE)
+    }, once = TRUE, ignoreNULL = TRUE, ignoreInit = FALSE)
 
     # -------------------------------------------------------------------------
     # Helpers serveur
