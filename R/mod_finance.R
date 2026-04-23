@@ -413,7 +413,12 @@ mod_finance_server <- function(id, con) {
 
     # Synchroniser le selectInput symbol avec les compagnies filtrées
     shiny::observe({
-      df      <- df_filtres() |> dplyr::arrange(symbol)
+      df <- df_filtres() |> dplyr::arrange(symbol)
+      if (nrow(df) == 0) {
+        shiny::updateSelectInput(session, "symbol",
+                                 choices = c("Aucune compagnie" = ""))
+        return()
+      }
       choices <- setNames(df$symbol, paste0(df$symbol, " — ", df$companyname))
       shiny::updateSelectInput(session, "symbol",
                                choices  = choices,
