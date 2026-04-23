@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_finance.R
 \name{mod_finance_ui}
 \alias{mod_finance_ui}
-\title{UI du module analyse boursière}
+\title{UI complète du module analyse boursière (raccourci)}
 \usage{
 mod_finance_ui(id)
 }
@@ -10,9 +10,9 @@ mod_finance_ui(id)
 \item{id}{Identifiant du module (chaîne de caractères)}
 }
 \value{
-`tagList` contenant deux `bslib::nav_panel`
+Un `bslib::navset_bar`
 }
 \description{
-Retourne un `tagList` de deux `nav_panel` (Filtres + Résultats) à insérer
-dans un `bslib::page_navbar()`.
+Combine `mod_finance_ui1()` et `mod_finance_ui2()` dans un `bslib::navset_bar()`
+prêt à être inséré dans un conteneur de page (ex: `bslib::page_fluid()`).
 }

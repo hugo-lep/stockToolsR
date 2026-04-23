@@ -1,10 +1,7 @@
-          # ========================================================
-          # mod_finance.R — Module Shiny : analyse boursière S&P 500
-          #
 # Exporte deux fonctions :
 #   mod_finance_ui(id)       — panneaux nav à insérer dans un page_navbar()
 #   mod_finance_server(id, con) — logique serveur (nécessite une connexion DBI)
-# =============================================================================
+
 
 # ── Constantes internes ───────────────────────────────────────────────────────
 
