@@ -85,133 +85,166 @@
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 
-#' UI du module analyse boursière
+#' Onglet Filtres du module analyse boursière
 #'
-#' Retourne un `bslib::navset_bar()` autonome (deux onglets : Filtres + Résultats)
-#' à insérer dans n'importe quel conteneur de page (ex: `bslib::page_fluid()`).
+#' Retourne un `bslib::nav_panel` "Filtres" à insérer dans un `navset_*` parent.
+#' Utiliser le même `id` que `mod_finance_ui2()` et `mod_finance_server()`.
 #'
 #' @param id Identifiant du module (chaîne de caractères)
 #'
-#' @return Un `bslib::navset_bar` contenant deux `bslib::nav_panel`
+#' @return Un `bslib::nav_panel`
 #'
-#' @importFrom shiny NS tags textOutput tableOutput uiOutput plotOutput
-#'   selectInput sliderInput radioButtons checkboxGroupInput
-#' @importFrom bslib navset_bar nav_panel layout_sidebar sidebar card card_header
-#'   card_body layout_columns
+#' @importFrom shiny NS tags textOutput tableOutput selectInput sliderInput
+#'   checkboxGroupInput
+#' @importFrom bslib nav_panel layout_sidebar sidebar card card_header card_body
 #' @importFrom bsicons bs_icon
 #'
 #' @export
-mod_finance_ui <- function(id) {
+mod_finance_ui1 <- function(id) {
   ns <- shiny::NS(id)
 
-  bslib::navset_bar(
+  bslib::nav_panel(
+    title = "Filtres",
+    icon  = bsicons::bs_icon("sliders"),
 
-    # ── Onglet 1 : Filtres ───────────────────────────────────────────────────
-    bslib::nav_panel(
-      title = "Filtres",
-      icon  = bsicons::bs_icon("sliders"),
+    bslib::layout_sidebar(
+      sidebar = bslib::sidebar(
+        open  = "always",
+        width = 260,
 
-      bslib::layout_sidebar(
-        sidebar = bslib::sidebar(
-          open  = "always",
-          width = 260,
+        shiny::selectInput(ns("secteur_f"), "Secteur :",
+                           choices = "Tous", selected = "Tous"),
 
-          shiny::selectInput(ns("secteur_f"), "Secteur :",
-                             choices = "Tous", selected = "Tous"),
-
-          shiny::sliderInput(ns("ratio_max_f"),
-            label = shiny::tags$span(
-              "Position buy → sell :",
-              shiny::tags$br(),
-              shiny::tags$small(shiny::tags$em("0 = bon marché  |  1 = surévalué"))
-            ),
-            min = 0, max = 1, value = 1, step = 0.05)
-        ),
-
-        # Grille filtres CAGR
-        bslib::card(
-          bslib::card_header(shiny::tags$b("Critères de croissance (CAGR)")),
-          bslib::card_body(
-            .ligne_filtre(ns, "seuil_revenue", "years_revenue", "Revenus",
-                          selected_years = c("3", "5")),
-            .ligne_filtre(ns, "seuil_ebitda",  "years_ebitda",  "EBITDA"),
-            .ligne_filtre(ns, "seuil_eps",      "years_eps",     "EPS dilué")
-          )
-        ),
-
-        # Compagnies retenues
-        bslib::card(
-          bslib::card_header(
-            class = "d-flex justify-content-between align-items-center",
-            shiny::tags$b("Compagnies retenues"),
-            shiny::textOutput(ns("n_filtrees"), inline = TRUE)
+        shiny::sliderInput(ns("ratio_max_f"),
+          label = shiny::tags$span(
+            "Position buy → sell :",
+            shiny::tags$br(),
+            shiny::tags$small(shiny::tags$em("0 = bon marché  |  1 = surévalué"))
           ),
-          bslib::card_body(
-            style = "max-height: 400px; overflow-y: auto; padding: 0.5rem;",
-            shiny::tableOutput(ns("table_filtrees"))
-          )
+          min = 0, max = 1, value = 1, step = 0.05)
+      ),
+
+      # Grille filtres CAGR
+      bslib::card(
+        bslib::card_header(shiny::tags$b("Critères de croissance (CAGR)")),
+        bslib::card_body(
+          .ligne_filtre(ns, "seuil_revenue", "years_revenue", "Revenus",
+                        selected_years = c("3", "5")),
+          .ligne_filtre(ns, "seuil_ebitda",  "years_ebitda",  "EBITDA"),
+          .ligne_filtre(ns, "seuil_eps",      "years_eps",     "EPS dilué")
+        )
+      ),
+
+      # Compagnies retenues
+      bslib::card(
+        bslib::card_header(
+          class = "d-flex justify-content-between align-items-center",
+          shiny::tags$b("Compagnies retenues"),
+          shiny::textOutput(ns("n_filtrees"), inline = TRUE)
+        ),
+        bslib::card_body(
+          style = "max-height: 400px; overflow-y: auto; padding: 0.5rem;",
+          shiny::tableOutput(ns("table_filtrees"))
         )
       )
-    ),
+    )
+  )
+}
 
-    # ── Onglet 2 : Résultats ─────────────────────────────────────────────────
-    bslib::nav_panel(
-      title = "Résultats",
-      icon  = bsicons::bs_icon("graph-up"),
+#' Onglet Résultats du module analyse boursière
+#'
+#' Retourne un `bslib::nav_panel` "Résultats" à insérer dans un `navset_*` parent.
+#' Utiliser le même `id` que `mod_finance_ui1()` et `mod_finance_server()`.
+#'
+#' @param id Identifiant du module (chaîne de caractères)
+#'
+#' @return Un `bslib::nav_panel`
+#'
+#' @importFrom shiny NS tags textOutput uiOutput plotOutput selectInput
+#'   radioButtons hr
+#' @importFrom bslib nav_panel layout_sidebar sidebar card card_header card_body
+#'   layout_columns
+#' @importFrom bsicons bs_icon
+#'
+#' @export
+mod_finance_ui2 <- function(id) {
+  ns <- shiny::NS(id)
 
-      bslib::layout_sidebar(
-        sidebar = bslib::sidebar(
-          open  = "always",
-          width = 230,
+  bslib::nav_panel(
+    title = "Résultats",
+    icon  = bsicons::bs_icon("graph-up"),
 
-          shiny::selectInput(ns("symbol"), "Compagnie :", choices = NULL),
+    bslib::layout_sidebar(
+      sidebar = bslib::sidebar(
+        open  = "always",
+        width = 230,
 
-          shiny::hr(),
+        shiny::selectInput(ns("symbol"), "Compagnie :", choices = NULL),
 
-          shiny::radioButtons(ns("metrique"), shiny::tags$b("Bande de valorisation"),
-            choices  = .metrique_choices,
-            selected = "p_to_s"
+        shiny::hr(),
+
+        shiny::radioButtons(ns("metrique"), shiny::tags$b("Bande de valorisation"),
+          choices  = .metrique_choices,
+          selected = "p_to_s"
+        ),
+
+        shiny::hr(),
+
+        shiny::radioButtons(ns("periode"), shiny::tags$b("Période affichée"),
+          choices  = c("1 an" = 1, "3 ans" = 3, "5 ans" = 5, "10 ans" = 10),
+          selected = 5,
+          inline   = TRUE
+        )
+      ),
+
+      bslib::layout_columns(
+        col_widths = c(5, 7),
+
+        # ── Qualité ──────────────────────────────────────────────────────────
+        bslib::card(
+          height = "620px",
+          bslib::card_header(
+            class = "d-flex justify-content-between align-items-center",
+            shiny::tags$b("Qualité"),
+            shiny::tags$small(class = "text-muted",
+              shiny::textOutput(ns("qualite_secteur"), inline = TRUE))
           ),
-
-          shiny::hr(),
-
-          shiny::radioButtons(ns("periode"), shiny::tags$b("Période affichée"),
-            choices  = c("1 an" = 1, "3 ans" = 3, "5 ans" = 5, "10 ans" = 10),
-            selected = 5,
-            inline   = TRUE
+          bslib::card_body(
+            style = "overflow-y: auto; padding: 0.5rem;",
+            shiny::uiOutput(ns("tableau_qualite"))
           )
         ),
 
-        bslib::layout_columns(
-          col_widths = c(5, 7),
-
-          # ── Qualité ────────────────────────────────────────────────────────
-          bslib::card(
-            height = "620px",
-            bslib::card_header(
-              class = "d-flex justify-content-between align-items-center",
-              shiny::tags$b("Qualité"),
-              shiny::tags$small(class = "text-muted",
-                shiny::textOutput(ns("qualite_secteur"), inline = TRUE))
-            ),
-            bslib::card_body(
-              style = "overflow-y: auto; padding: 0.5rem;",
-              shiny::uiOutput(ns("tableau_qualite"))
-            )
-          ),
-
-          # ── Prix ───────────────────────────────────────────────────────────
-          bslib::card(
-            height = "620px",
-            full_screen = TRUE,
-            bslib::card_header(shiny::tags$b("Prix vs bandes de valorisation")),
-            bslib::card_body(padding = 0,
-              shiny::plotOutput(ns("valuation_plot"), height = "560px")
-            )
+        # ── Prix ─────────────────────────────────────────────────────────────
+        bslib::card(
+          height = "620px",
+          full_screen = TRUE,
+          bslib::card_header(shiny::tags$b("Prix vs bandes de valorisation")),
+          bslib::card_body(padding = 0,
+            shiny::plotOutput(ns("valuation_plot"), height = "560px")
           )
         )
       )
     )
+  )
+}
+
+#' UI complète du module analyse boursière (raccourci)
+#'
+#' Combine `mod_finance_ui1()` et `mod_finance_ui2()` dans un `bslib::navset_bar()`
+#' prêt à être inséré dans un conteneur de page (ex: `bslib::page_fluid()`).
+#'
+#' @param id Identifiant du module (chaîne de caractères)
+#'
+#' @return Un `bslib::navset_bar`
+#'
+#' @importFrom bslib navset_bar
+#'
+#' @export
+mod_finance_ui <- function(id) {
+  bslib::navset_bar(
+    mod_finance_ui1(id),
+    mod_finance_ui2(id)
   )
 }
 
@@ -303,11 +336,14 @@ mod_finance_server <- function(id, con) {
                                      ~ median(.x, na.rm = TRUE)),
                        .groups = "drop")
 
-    # Peupler le filtre secteur
+    # Peupler le filtre secteur après le premier flush (évite les problèmes
+    # de timing lorsque le module est chargé depuis un package installé)
     secteurs <- c("Tous", sort(unique(na.omit(base_data$sector))))
-    shiny::updateSelectInput(session, "secteur_f",
-                             choices  = secteurs,
-                             selected = "Tous")
+    session$onFlushed(function() {
+      shiny::updateSelectInput(session, "secteur_f",
+                               choices  = secteurs,
+                               selected = "Tous")
+    }, once = TRUE)
 
     # -------------------------------------------------------------------------
     # Helpers serveur

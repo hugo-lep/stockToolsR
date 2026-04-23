@@ -32,12 +32,15 @@ con <- dbConnect(
 dbListTables(con)
 # ── Application test ──────────────────────────────────────────────────────────
 
-# mod_finance_ui() retourne un navset_bar() autonome — on l'imbrique
-# directement dans page_fluid() sans do.call.
+# Les deux nav_panel sont passés séparément à navset_bar() —
+# on pourrait aussi intercaler d'autres nav_panel ici.
 ui <- bslib::page_fluid(
   theme = bslib::bs_theme(bootswatch = "flatly",
                           base_font  = bslib::font_google("Inter")),
-  mod_finance_ui("finance")
+  bslib::navset_bar(
+    mod_finance_ui1("finance"),
+    mod_finance_ui2("finance")
+  )
 )
 
 server <- function(input, output, session) {
