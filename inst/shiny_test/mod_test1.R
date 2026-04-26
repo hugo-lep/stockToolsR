@@ -18,14 +18,14 @@ library(s3db)
 devtools::load_all()   # charge mod_finance_ui() et mod_finance_server()
 
 # ── Connexion PostgreSQL ──────────────────────────────────────────────────────
-s3_connection_HL()
+s3_connection_HL(config_path = "../app/data")
 config_global <- s3readRDS_HL(object = "config_files/config_global.rds")
 
 con <- dbConnect(
   RPostgres::Postgres(),
   dbname   = "stocktools",
   host     = "localhost",
-  port     = 5433,
+  port     = 5432,
   user     = config_global$DB_credential$user,
   password = config_global$DB_credential$password
 )

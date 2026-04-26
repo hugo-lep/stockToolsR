@@ -2,7 +2,7 @@
 # 0-plan.R — Point d'entrée du cron quotidien
 # Exécution : Rscript inst/script/0-plan.R
 # =============================================================================
-# ssh -L 5433:127.0.0.1:5432 hugo@158.69.221.155
+# ssh -L 5432:127.0.0.1:5432 hugo@158.69.221.155
 
 library(here)
 library(DBI)
@@ -36,7 +36,7 @@ con <- dbConnect(
   RPostgres::Postgres(),
   dbname   = "stocktools",
   host     = "localhost",
-  port     = 5433,
+  port     = 5432,
   user     = config_global$DB_credential$user,
   password = config_global$DB_credential$password
 )

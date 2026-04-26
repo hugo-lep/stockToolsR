@@ -532,16 +532,16 @@ mod_finance_server <- function(id, con) {
       shiny::req(nrow(df) > 0)
 
       ggplot2::ggplot(df, ggplot2::aes(x = date)) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = buy, ymax = caution),
-                             fill = "#198754", alpha = 0.08) +
-        ggplot2::geom_ribbon(ggplot2::aes(ymin = caution, ymax = sell),
-                             fill = "#fd7e14", alpha = 0.08) +
+#        ggplot2::geom_ribbon(ggplot2::aes(ymin = buy, ymax = caution),
+#                             fill = "#198754", alpha = 0.08) +
+#        ggplot2::geom_ribbon(ggplot2::aes(ymin = caution, ymax = sell),
+#                             fill = "#fd7e14", alpha = 0.08) +
         ggplot2::geom_line(ggplot2::aes(y = buy),
-                           color = "#198754", linewidth = 0.5, linetype = "dashed") +
+                           color = "green", linewidth = 0.5) +
         ggplot2::geom_line(ggplot2::aes(y = caution),
-                           color = "#fd7e14", linewidth = 0.5, linetype = "dashed") +
+                           color = "orange", linewidth = 0.5) +
         ggplot2::geom_line(ggplot2::aes(y = sell),
-                           color = "#dc3545", linewidth = 0.5, linetype = "dashed") +
+                           color = "red", linewidth = 0.5) +
         ggplot2::geom_line(ggplot2::aes(y = close),
                            color = "black",   linewidth = 0.9) +
         ggplot2::labs(
