@@ -1,8 +1,8 @@
 # =============================================================================
-# mod_test1.R — Test du module mod_finance
+# mod_test3.R — Test du module mod_finance3
 #
 # Prérequis : tunnel SSH actif vers le VPS PostgreSQL
-# Lancer depuis RStudio : shiny::runApp("inst/shiny_test/mod_test1.R")
+# Lancer depuis RStudio : shiny::runApp("inst/shiny_test/mod_test3.R")
 # =============================================================================
 
 library(shiny)
@@ -15,7 +15,7 @@ library(DBI)
 library(RPostgres)
 library(lubridate)
 library(s3db)
-devtools::load_all()   # charge mod_finance_ui() et mod_finance_server()
+devtools::load_all()
 
 # ── Connexion PostgreSQL ──────────────────────────────────────────────────────
 s3_connection_HL(config_path = "../app/data")
@@ -30,21 +30,19 @@ con <- dbConnect(
   password = config_global$DB_credential$password
 )
 dbListTables(con)
-# ── Application test ──────────────────────────────────────────────────────────
 
-# Les deux nav_panel sont passés séparément à navset_bar() —
-# on pourrait aussi intercaler d'autres nav_panel ici.
+# ── Application test ──────────────────────────────────────────────────────────
 ui <- bslib::page_fluid(
   theme = bslib::bs_theme(bootswatch = "flatly",
                           base_font  = bslib::font_google("Inter")),
   bslib::navset_bar(
-    mod_finance_ui1("finance"),
-    mod_finance_ui2("finance")
+    mod_finance3_ui1("finance3"),
+    mod_finance3_ui2("finance3")
   )
 )
 
 server <- function(input, output, session) {
-  mod_finance_server("finance", con = con)
+  mod_finance3_server("finance3", con = con)
 }
 
 #shiny::onStop(function() DBI::dbDisconnect(con))

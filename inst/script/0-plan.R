@@ -26,6 +26,8 @@ today       <- Sys.Date()
 #tickers <- tq_index("SP500")$symbol |> setdiff(c("-","2602335D"))
 tickers <- str_replace_all(GetSP500Stocks()$Tickers, "\\.", "-")
 
+setwd(here())
+getwd()
 s3_connection_HL()
 config_global <- s3readRDS_HL(object = "config_files/config_global.rds")
 key_fmp_api <- config_global$key_fmp_api
@@ -58,6 +60,8 @@ source("inst/script/7-stockprice.R")
 source("inst/script/8-dividends.R")
 source("inst/script/9-tidy_stmts.R")
 source("inst/script/10-ratios.R")
+source("inst/script/11-dividend_build.R")
+source("inst/script/12-quality_ratios.R")
 
 cat("temps de traitement",Sys.time() - start_time)
 message("=== Fin du cron : ", today, " ===")
