@@ -42,7 +42,7 @@ valuation_stockprice <- function(con, symbols, window_months = 18) {
 
   message("  [1/5] Chargement des états financiers...")
   # --- États financiers ---
-  df_statement <- dplyr::tbl(con, "financial_stmts_build") |>
+  df_statement <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "financial_stmts_build")) |>
     dplyr::filter(symbol %in% !!symbols) |>
     dplyr::collect() |>
     dplyr::mutate(
@@ -63,7 +63,7 @@ valuation_stockprice <- function(con, symbols, window_months = 18) {
 
   message("  [2/5] Chargement des prix boursiers...")
   # --- Prix boursiers ---
-  df_price <- dplyr::tbl(con, "stockprice") |>
+  df_price <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
     dplyr::filter(symbol %in% !!symbols) |>
     dplyr::collect() |>
     dplyr::select(symbol, date, close) |>
@@ -162,8 +162,8 @@ valuation_stockprice <- function(con, symbols, window_months = 18) {
     dplyr::distinct(symbol, date, .keep_all = TRUE)
 
   message("Ré-écriture de la table: ", nrow(final2), " lignes")
-  DBI::dbExecute(con, "TRUNCATE TABLE valuation_build")
-  DBI::dbWriteTable(con, "valuation_build", final2, append = TRUE)
+  DBI::dbExecute(con, "TRUNCATE TABLE stocktools.valuation_build")
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "valuation_build"), final2, append = TRUE)
 
 
 #  DBI::dbWriteTable(con, "valuation_build", final2, overwrite = TRUE)
@@ -202,7 +202,7 @@ valuation_stockprice <- function(con, symbols, window_months = 18) {
 #' }
 cagr_stockprice <- function(con, symbols, years = c(1, 3, 5)) {
 
-  df_price <- dplyr::tbl(con, "stockprice") |>
+  df_price <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
     dplyr::filter(symbol %in% !!symbols) |>
     dplyr::collect() |>
     dplyr::mutate(date = as.Date(date)) |>
@@ -229,8 +229,8 @@ cagr_stockprice <- function(con, symbols, years = c(1, 3, 5)) {
     purrr::map(compute_cagr) |>
     dplyr::bind_rows()
 
-  DBI::dbExecute(con, "TRUNCATE TABLE cagr_price_build")
-  DBI::dbWriteTable(con, "cagr_price_build", final, append = TRUE)
+  DBI::dbExecute(con, "TRUNCATE TABLE stocktools.cagr_price_build")
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "cagr_price_build"), final, append = TRUE)
   message(nrow(final), " ligne(s) écrite(s) dans cagr_price_build.")
 
   invisible(final)
@@ -272,7 +272,7 @@ cagr_stmts <- function(con, symbols,
                                  "is_weightedaverageshsoutdil", "bs_totalassets",
                                  "bs_totalliabilities", "cf_freecashflow", "caf")) {
 
-  df <- dplyr::tbl(con, "financial_stmts_build") |>
+  df <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "financial_stmts_build")) |>
     dplyr::filter(symbol %in% !!symbols) |>
     dplyr::collect() |>
     dplyr::mutate(
@@ -316,8 +316,8 @@ cagr_stmts <- function(con, symbols,
       dplyr::starts_with("cagr_")
     )
 
-  DBI::dbExecute(con, "TRUNCATE TABLE cagr_stmts_build")
-  DBI::dbWriteTable(con, "cagr_stmts_build", final, append = TRUE)
+  DBI::dbExecute(con, "TRUNCATE TABLE stocktools.cagr_stmts_build")
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "cagr_stmts_build"), final, append = TRUE)
   message(nrow(final), " ligne(s) écrite(s) dans cagr_stmts_build.")
 
   invisible(final)

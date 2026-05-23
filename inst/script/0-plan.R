@@ -35,19 +35,20 @@ save_path  <- "data/cies_order.rds"
 
 # connecter tunnel SSH: ssh -L 5433:127.0.0.1:5432 hugo@158.69.221.155
 con <- dbConnect(
-  RPostgres::Postgres(),
-  dbname   = "stocktools",
-  host     = "localhost",
-  port     = 5432,
-  user     = config_global$DB_credential$user,
-  password = config_global$DB_credential$password
+    drv      = RPostgres::Postgres(),
+    dbname   = config_global$protegR2$db$dbname,
+    host     = config_global$protegR2$db$host,
+    port     = config_global$protegR2$db$port,
+    user     = config_global$protegR2$db$user,
+    password = config_global$protegR2$db$password
 )
 on.exit(dbDisconnect(con), add = TRUE)
 
 message("=== Début du cron : ", today, " ===")
 
 start_time <- Sys.time()
-dbListTables(con)
+DBI::dbListObjects(con, prefix = DBI::Id(schema = "stocktools"))$table |>
+  purrr::map_chr(~ slot(.x, "name")[["table"]])
 source("inst/script/1-profiles.R")
 source("inst/script/2-splits_detection.R")
 source("inst/script/3-splits_processing.R")
@@ -67,21 +68,22 @@ cat("temps de traitement",Sys.time() - start_time)
 message("=== Fin du cron : ", today, " ===")
 
 
-dbListTables(con)
+DBI::dbListObjects(con, prefix = DBI::Id(schema = "stocktools"))$table |>
+  purrr::map_chr(~ slot(.x, "name")[["table"]])
 #  table de travail:
-cies_profile_build <- dbReadTable(con,"cies_profile_build")
-#stockprice <- dbReadTable(con,"stockprice")
-#dividendes <- dbReadTable(con,"dividendes")
-financial_stmts_build <- dbReadTable(con,"financial_stmts_build")
+cies_profile_build <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "cies_profile_build"))
+#stockprice <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "stockprice"))
+#dividendes <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "dividendes"))
+financial_stmts_build <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "financial_stmts_build"))
 
 names(financial_stmts_build)
 financial_stmts_build2 <- financial_stmts_build %>%
   group_by(symbol) %>%
   arrange(desc(date)) %>%
   slice(1)
-cagr_price_build <- dbReadTable(con,"cagr_price_build")
-cagr_stmts_build <- dbReadTable(con,"cagr_stmts_build")
-valuation_build <- dbReadTable(con,"valuation_build")
+cagr_price_build <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "cagr_price_build"))
+cagr_stmts_build <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "cagr_stmts_build"))
+valuation_build <- dbReadTable(con, DBI::Id(schema = "stocktools", table = "valuation_build"))
 valuation_build2 <- valuation_build %>%
   group_by(symbol) %>%
   arrange(desc(date)) %>%
@@ -99,11 +101,11 @@ test <- valuation_build2 %>%
          close_ratio_e = round((close - buy_pe) / (sell_pe - buy_pe),2)) %>%
   filter(close_ratio_s <= 0.1)
 
-names(dbReadTable(con,"qts_income_stmts_orig"))
-names(dbReadTable(con,"qts_balance_stmts_orig"))
-names(dbReadTable(con,"qts_income_stmts_orig"))
+names(dbReadTable(con, DBI::Id(schema = "stocktools", table = "qts_income_stmts_orig")))
+names(dbReadTable(con, DBI::Id(schema = "stocktools", table = "qts_balance_stmts_orig")))
+names(dbReadTable(con, DBI::Id(schema = "stocktools", table = "qts_income_stmts_orig")))
 
-test <- tbl(con, "valuation_build") |>
+test <- tbl(con, dbplyr::in_schema("stocktools", "valuation_build")) |>
   group_by(symbol) |>
   slice_max(date, n = 1) |>
   collect() %>%

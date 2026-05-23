@@ -50,10 +50,13 @@
 # seuil       : "min" → cie >= valeur | "max" → cie <= valeur
 # type        : absent = slider | "binary" = checkbox (pas de slider)
 # no_negative : TRUE → exclut aussi les valeurs négatives (filtre "max" uniquement)
+# div_sub     : TRUE → filtre dividende conditionnel (masqué si "avec_div" non coché)
 # default     : TRUE = coché au démarrage
 .filter_defs2 <- list(
   list(id="roa",      label="ROA",              cat="Rentabilité", col="roa",                  min=0, max=60,   step=1,    fmt="pct", seuil="min", default=TRUE),
   list(id="roe",      label="ROE",              cat="Rentabilité", col="roe",                  min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="roa_moy5", label="ROA moy. 5a",      cat="Rentabilité", col="roa_moy5",             min=0, max=30,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="roe_moy5", label="ROE moy. 5a",      cat="Rentabilité", col="roe_moy5",             min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
   list(id="m_brut",   label="Marge brute",      cat="Rentabilité", col="m_brut",               min=0, max=100,  step=1,    fmt="pct", seuil="min", default=FALSE),
   list(id="m_ebitda", label="Marge EBITDA",     cat="Rentabilité", col="m_ebitda",             min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
   list(id="m_net",    label="Marge nette",      cat="Rentabilité", col="m_net",                min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
@@ -66,13 +69,12 @@
   list(id="br_ped",   label="BR EPS dil.",      cat="Buy Ratio",   col="r_ped",  min=0, max=1, step=0.05, fmt="dec", seuil="max", default=FALSE, val=0.1),
   list(id="r_courant",label="Ratio courant",    cat="Solidité",    col="ratio_courant",        min=0, max=5,    step=0.1,  fmt="dec", seuil="min", default=FALSE),
   list(id="fcf_rev",  label="FCF / Revenus",    cat="Solidité",    col="fcf_rev",              min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="pppi",     label="PPPI max.",         cat="Solidité",    col="pppi",                 min=0, max=100,  step=5,    fmt="pct", seuil="max", default=FALSE, val=50),
   list(id="mktcap",   label="Mkt Cap ($M)",     cat="Marché",      col="mktcap_m",             min=0, max=3000, step=50,   fmt="num", seuil="min", default=FALSE),
-  list(id="yield",    label="Yield min.",       cat="Dividendes",  col="yield",      min=0, max=10,  step=0.5, fmt="pct", seuil="min", default=FALSE, val=2),
-  list(id="cagr_div5",label="CAGR Div. 5a",    cat="Dividendes",  col="cagr_div_5a",min=0, max=20,  step=1,   fmt="pct", seuil="min", default=FALSE, val=3),
-  # FCF Payout : exclut les payout négatifs (FCF négatif) et NA
-  list(id="fcf_pay",  label="FCF Payout max.", cat="Dividendes",  col="fcf_payout", min=0, max=100, step=5,   fmt="pct", seuil="max", default=FALSE, val=80, no_negative=TRUE),
-  # Filtre binaire : checkbox dans Filtres actifs (pas de slider)
-  list(id="avec_div", label="With dividend",   cat="Dividendes",  col="div_ttm",    type="binary",            default=FALSE)
+  # Filtres dividendes conditionnels (div_sub=TRUE) — visibles uniquement si "avec_div" coché
+  list(id="yield",    label="Yield min.",       cat="Dividendes",  col="yield",      min=0, max=10,  step=0.5, fmt="pct", seuil="min", default=FALSE, val=2,  div_sub=TRUE),
+  list(id="cagr_div5",label="CAGR Div. 5a",    cat="Dividendes",  col="cagr_div_5a",min=0, max=20,  step=1,   fmt="pct", seuil="min", default=FALSE, val=3,  div_sub=TRUE),
+  list(id="fcf_pay",  label="FCF Payout max.", cat="Dividendes",   col="fcf_payout", min=0, max=100, step=5,   fmt="pct", seuil="max", default=FALSE, val=80, div_sub=TRUE, no_negative=TRUE)
 )
 
 # Préréglages de filtres
@@ -82,7 +84,7 @@
     valeurs = list(roa = 10, m_ebitda = 15, cagr_rev = 8, cagr_eps = 8, br_pts = 0.5)
   ),
   "Dividendes stables" = list(
-    actifs  = c("roa", "fcf_rev", "r_courant", "br_pts", "yield", "avec_div"),
+    actifs  = c("roa", "fcf_rev", "r_courant", "br_pts", "avec_div", "yield"),
     valeurs = list(roa = 5, fcf_rev = 8, r_courant = 1.2, br_pts = 0.7, yield = 2)
   ),
   "Valeur défensive" = list(
@@ -91,11 +93,12 @@
   )
 )
 
-# Checkboxes groupées par catégorie (sidebar Sélection)
+# Checkboxes groupées par catégorie (sidebar Sélection) — exclut les div_sub
 .build_checkbox_ui2 <- function(ns, defs) {
-  cats <- unique(sapply(defs, `[[`, "cat"))
+  defs_static <- Filter(function(d) !isTRUE(d$div_sub), defs)
+  cats <- unique(sapply(defs_static, `[[`, "cat"))
   shiny::tagList(lapply(cats, function(cat) {
-    defs_cat <- Filter(function(d) d$cat == cat, defs)
+    defs_cat <- Filter(function(d) d$cat == cat, defs_static)
     ids      <- sapply(defs_cat, `[[`, "id")
     labels   <- stats::setNames(ids, sapply(defs_cat, `[[`, "label"))
     defaults <- ids[sapply(defs_cat, `[[`, "default")]
@@ -131,18 +134,6 @@
                     shiny::tags$small(shiny::tags$b(shiny::tags$em(cat)))),
       lapply(defs_cat, function(d) {
         cur_val <- valeurs_courantes[[d$id]]
-
-        # ── Filtre binaire → checkbox ────────────────────────────────────────
-        if (isTRUE(d$type == "binary")) {
-          return(shiny::tags$div(
-            class = "ms-1",
-            shiny::checkboxInput(
-              ns(paste0("f_", d$id)),
-              label = d$label,
-              value = isTRUE(cur_val)
-            )
-          ))
-        }
 
         # ── Filtre slider ────────────────────────────────────────────────────
         # Priorité : valeur courante > val définie > min/max selon seuil
@@ -239,6 +230,7 @@
 #' @param id Identifiant du module
 #' @return `bslib::nav_panel`
 #' @importFrom shiny NS tags tagList textOutput tableOutput selectInput uiOutput
+#'   checkboxInput
 #' @importFrom bslib nav_panel layout_sidebar sidebar card card_header card_body
 #' @importFrom bsicons bs_icon
 #' @export
@@ -261,14 +253,21 @@ mod_finance4_ui1 <- function(id) {
         title = "Sélection",
         width = 230,
 
-        shiny::selectInput(ns("preset"), "Préréglage :",
+        shiny::selectInput(ns("preset"), "Pr\u00e9r\u00e9glage :",
                            choices  = c("Aucun" = "", names(.presets_defs3)),
                            selected = ""),
         shiny::tags$hr(class = "my-1"),
         shiny::selectInput(ns("secteur_f"), "Secteur :",
                            choices = "Tous", selected = "Tous"),
         shiny::tags$hr(class = "my-1"),
-        .build_checkbox_ui2(ns, .filter_defs2)
+
+        # Filtres statiques (non-dividendes)
+        .build_checkbox_ui2(ns, .filter_defs2),
+
+        # Filtre dividendes — conditionnel
+        shiny::tags$hr(class = "my-1"),
+        shiny::checkboxInput(ns("avec_div"), "Avec dividende", value = FALSE),
+        shiny::uiOutput(ns("div_checkbox_ui"))
       ),
 
       bslib::layout_sidebar(
@@ -278,7 +277,7 @@ mod_finance4_ui1 <- function(id) {
         sidebar = bslib::sidebar(
           title = "Filtres actifs",
           open  = "always",
-          width = 245,
+          width = 310,
           shiny::uiOutput(ns("sliders_dynamiques"))
         ),
 
@@ -288,11 +287,18 @@ mod_finance4_ui1 <- function(id) {
           bslib::card_header(
             class = "d-flex justify-content-between align-items-center",
             shiny::tags$b("Compagnies retenues"),
-            shiny::textOutput(ns("n_filtrees4"), inline = TRUE)
+            shiny::tags$div(
+              class = "d-flex align-items-center gap-2",
+              shiny::textOutput(ns("n_filtrees4"), inline = TRUE),
+              shiny::selectInput(ns("preset"), label = NULL,
+                                 choices  = c("Pr\u00e9r\u00e9glage..." = "",
+                                              names(.presets_defs3)),
+                                 selected = "", width = "150px")
+            )
           ),
           bslib::card_body(
             style = "overflow-y:auto; padding:0.5rem;",
-            shiny::tableOutput(ns("table_filtrees4"))
+            shiny::uiOutput(ns("table_filtrees4"))
           )
         )
       )
@@ -328,14 +334,14 @@ mod_finance4_ui2 <- function(id) {
     ),
 
     bslib::layout_columns(
-      col_widths = c(3, 6, 3),
+      col_widths = c(4, 5, 3),
 
-      # ── Colonne gauche ──────────────────────────────────────────────────
+      # ── Colonne gauche — Qualité + Graphique ────────────────────────────
       shiny::tagList(
         bslib::card(
           bslib::card_header(
             class = "d-flex justify-content-between align-items-center",
-            shiny::tags$b("Qualité \u2014 Rentabilit\u00e9 & Marges"),
+            shiny::tags$b("Qualité \u2014 Rentabilit\u00e9, Marges & Valorisation"),
             shiny::tags$small(class = "text-muted",
                               shiny::textOutput(ns("secteur_detail4"), inline = TRUE))
           ),
@@ -343,22 +349,6 @@ mod_finance4_ui2 <- function(id) {
                            shiny::uiOutput(ns("tableau_rentabilite4")))
         ),
         bslib::card(
-          bslib::card_header(shiny::tags$b("Valorisation")),
-          bslib::card_body(style = "padding:0.5rem;",
-                           shiny::uiOutput(ns("tableau_valorisation4")))
-        )
-      ),
-
-      # ── Colonne centrale ────────────────────────────────────────────────
-      shiny::tagList(
-        bslib::card(
-          fill = FALSE,
-          bslib::card_header(shiny::tags$b("Croissance \u2014 Co. vs Secteur vs Industrie")),
-          bslib::card_body(style = "padding:0.5rem; overflow-x:auto; overflow-y:visible;",
-                           shiny::uiOutput(ns("tableau_croissance4")))
-        ),
-        bslib::card(
-          fill = FALSE,
           bslib::card_header(
             class = "d-flex justify-content-between align-items-center",
             shiny::tags$b("Bon moment pour acheter ?"),
@@ -368,13 +358,23 @@ mod_finance4_ui2 <- function(id) {
                                selected = 1, width = "120px")
           ),
           bslib::card_body(
-            shiny::plotOutput(ns("graph_buy4"), height = "220px"),
+            shiny::plotOutput(ns("graph_buy4"), height = "260px"),
             shiny::uiOutput(ns("buy_signal_ui4"))
           )
         )
       ),
 
-      # ── Colonne droite ──────────────────────────────────────────────────
+      # ── Colonne centrale — Croissance ────────────────────────────────────
+      shiny::tagList(
+        bslib::card(
+          fill = FALSE,
+          bslib::card_header(shiny::tags$b("Croissance \u2014 Co. vs Secteur vs Industrie")),
+          bslib::card_body(style = "padding:0.5rem; overflow-x:auto; overflow-y:visible;",
+                           shiny::uiOutput(ns("tableau_croissance4")))
+        )
+      ),
+
+      # ── Colonne droite — Dividendes + Structure financière ───────────────
       shiny::tagList(
         bslib::card(
           bslib::card_header(shiny::tags$b("Dividendes")),
@@ -400,7 +400,9 @@ mod_finance4_ui2 <- function(id) {
 #' @importFrom bslib navset_bar
 #' @export
 mod_finance4_ui <- function(id) {
+  ns <- shiny::NS(id)
   bslib::navset_bar(
+    id = ns("main_nav"),
     mod_finance4_ui1(id),
     mod_finance4_ui2(id)
   )
@@ -415,7 +417,7 @@ mod_finance4_ui <- function(id) {
 #'
 #' @importFrom shiny moduleServer reactive req observe observeEvent renderText
 #'   renderTable renderUI renderPlot updateSelectInput updateCheckboxGroupInput
-#'   updateSliderInput checkboxInput plotOutput
+#'   updateSliderInput updateCheckboxInput checkboxGroupInput plotOutput
 #' @importFrom dplyr tbl collect select filter mutate arrange group_by summarise
 #'   across all_of any_of desc slice_tail left_join starts_with transmute if_else
 #' @importFrom DBI dbReadTable dbGetQuery
@@ -434,14 +436,14 @@ mod_finance4_server <- function(id, con) {
     # =========================================================================
 
     message("  [1/5] quality_build...")
-    quality <- DBI::dbReadTable(con, "quality_build") |>
+    quality <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "quality_build")) |>
       dplyr::mutate(
         date_stmts = as.Date(date_stmts),
         filingdate = as.Date(filingdate)
       )
 
     message("  [2/5] dividendes_build...")
-    div_build <- DBI::dbReadTable(con, "dividendes_build") |>
+    div_build <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "dividendes_build")) |>
       dplyr::mutate(
         last_div_date       = as.Date(last_div_date),
         last_special_date   = as.Date(last_special_date),
@@ -449,15 +451,15 @@ mod_finance4_server <- function(id, con) {
       )
 
     message("  [3/5] cagr_stmts_build + cagr_price_build...")
-    cagr_stmts <- DBI::dbReadTable(con, "cagr_stmts_build") |>
+    cagr_stmts <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "cagr_stmts_build")) |>
       dplyr::select(symbol, dplyr::starts_with("cagr_"))
 
-    cagr_price <- DBI::dbReadTable(con, "cagr_price_build") |>
+    cagr_price <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "cagr_price_build")) |>
       dplyr::select(symbol, cagr_1y, cagr_3y, cagr_5y) |>
       dplyr::mutate(cagr_10y = NA_real_)  # placeholder
 
     message("  [4/5] profils...")
-    profile_data <- dplyr::tbl(con, "cies_profile_build") |>
+    profile_data <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "cies_profile_build")) |>
       dplyr::select(symbol, companyname) |>
       dplyr::collect()
 
@@ -477,9 +479,11 @@ mod_finance4_server <- function(id, con) {
       dplyr::left_join(cagr_price,  by = "symbol")
 
     # ── Médianes sectorielles ─────────────────────────────────────────────
-    cols_med4 <- c("roa", "roe", "m_brut", "m_ebitda", "m_net", "fcf_rev",
+    cols_med4 <- c("roa", "roe", "roa_moy5", "roe_moy5",
+                   "m_brut", "m_ebitda", "m_net", "fcf_rev",
                    "ratio_courant", "d_actif", "couv_interet",
-                   "p_to_s_calc", "p_to_ebd_calc", "pe_calc", "peg_calc")
+                   "p_to_s_calc", "p_to_ebd_calc", "pe_calc", "peg_calc",
+                   "pppi")
 
     secteur_med4 <- base_data4 |>
       dplyr::group_by(sector) |>
@@ -514,16 +518,30 @@ mod_finance4_server <- function(id, con) {
 
     shiny::observeEvent(input$preset, {
       shiny::req(nchar(input$preset) > 0)
-      p    <- .presets_defs3[[input$preset]]
-      cats <- unique(sapply(.filter_defs2, `[[`, "cat"))
-      for (cat in cats) {
+      p <- .presets_defs3[[input$preset]]
+
+      # ── Checkboxes des catégories statiques ──────────────────────────────
+      defs_static <- Filter(function(d) !isTRUE(d$div_sub), .filter_defs2)
+      cats_static <- unique(sapply(defs_static, `[[`, "cat"))
+      for (cat in cats_static) {
         cat_id   <- paste0("cat_", gsub("[^a-z]", "_", tolower(cat)))
-        defs_cat <- Filter(function(d) d$cat == cat, .filter_defs2)
+        defs_cat <- Filter(function(d) d$cat == cat, defs_static)
         ids_cat  <- sapply(defs_cat, `[[`, "id")
         shiny::updateCheckboxGroupInput(session, cat_id,
                                         selected = intersect(p$actifs, ids_cat))
       }
+
+      # ── Checkbox avec_div ────────────────────────────────────────────────
+      shiny::updateCheckboxInput(session, "avec_div",
+                                  value = "avec_div" %in% p$actifs)
+
+      # ── Valeurs sliders + filtres dividendes (après flush) ───────────────
       session$onFlushed(once = TRUE, function() {
+        # Filtres dividendes conditionnels
+        div_ids <- sapply(Filter(function(d) isTRUE(d$div_sub), .filter_defs2), `[[`, "id")
+        shiny::updateCheckboxGroupInput(session, "cat_dividendes",
+                                        selected = intersect(p$actifs, div_ids))
+        # Valeurs des sliders
         for (fid in names(p$valeurs)) {
           shiny::updateSliderInput(session, paste0("f_", fid),
                                    value = p$valeurs[[fid]])
@@ -546,21 +564,49 @@ mod_finance4_server <- function(id, con) {
     # Filtres actifs
     # =========================================================================
 
+    # Checkboxes conditionnelles dividendes (dans sidebar Sélection)
+    output$div_checkbox_ui <- shiny::renderUI({
+      if (!isTRUE(input$avec_div)) return(NULL)
+      defs_div <- Filter(function(d) isTRUE(d$div_sub), .filter_defs2)
+      ids      <- sapply(defs_div, `[[`, "id")
+      labels   <- stats::setNames(ids, sapply(defs_div, `[[`, "label"))
+      shiny::tagList(
+        shiny::tags$p(class = "mb-0 mt-1",
+                      shiny::tags$small(shiny::tags$b(shiny::tags$em("Dividendes")))),
+        shiny::checkboxGroupInput(
+          session$ns("cat_dividendes"),
+          label    = NULL,
+          choices  = labels,
+          selected = character(0)
+        )
+      )
+    })
+
     filtres_actifs4 <- shiny::reactive({
-      cats    <- unique(sapply(.filter_defs2, `[[`, "cat"))
-      checked <- lapply(cats, function(cat) {
+      # Filtres statiques
+      defs_static <- Filter(function(d) !isTRUE(d$div_sub), .filter_defs2)
+      cats_static <- unique(sapply(defs_static, `[[`, "cat"))
+      checked_static <- lapply(cats_static, function(cat) {
         input[[paste0("cat_", gsub("[^a-z]", "_", tolower(cat)))]]
       })
-      unlist(Filter(Negate(is.null), checked))
+      base_actifs <- unlist(Filter(Negate(is.null), checked_static))
+
+      # Filtres dividendes conditionnels
+      div_actifs <- if (isTRUE(input$avec_div)) input$cat_dividendes else character(0)
+
+      c(base_actifs, div_actifs)
     })
 
     # Sliders dynamiques — valeurs courantes conservées lors du re-render
+    # isolate() : évite que la lecture des valeurs slider ne crée une dépendance
+    # réactive → empêche la boucle infinie lors de l'application d'un préréglage
     output$sliders_dynamiques <- shiny::renderUI({
       actifs <- filtres_actifs4()
-      # Lire les valeurs actuelles avant que le re-render ne les écrase
-      valeurs_courantes <- stats::setNames(
-        lapply(.filter_defs2, function(d) input[[paste0("f_", d$id)]]),
-        sapply(.filter_defs2, `[[`, "id")
+      valeurs_courantes <- shiny::isolate(
+        stats::setNames(
+          lapply(.filter_defs2, function(d) input[[paste0("f_", d$id)]]),
+          sapply(.filter_defs2, `[[`, "id")
+        )
       )
       .build_sliders_actifs2(ns = session$ns, defs = .filter_defs2,
                              actifs = actifs, valeurs_courantes = valeurs_courantes)
@@ -574,22 +620,19 @@ mod_finance4_server <- function(id, con) {
       df     <- base_data4
       actifs <- filtres_actifs4()
 
+      # Filtre secteur
       if (!is.null(input$secteur_f) && input$secteur_f != "Tous")
         df <- df |> dplyr::filter(sector == input$secteur_f)
 
+      # Filtre binaire avec_div (checkbox standalone)
+      if (isTRUE(input$avec_div)) {
+        df <- df[!is.na(df$div_ttm) & df$div_ttm > 0, ]
+      }
+
+      # Filtres slider
       for (d in .filter_defs2) {
         if (!d$id %in% actifs) next
 
-        # ── Filtre binaire (checkbox) ──────────────────────────────────────
-        if (isTRUE(d$type == "binary")) {
-          if (isTRUE(input[[paste0("f_", d$id)]])) {
-            col_vals <- df[[d$col]]
-            df <- df[!is.na(col_vals) & col_vals > 0, ]
-          }
-          next
-        }
-
-        # ── Filtre slider ──────────────────────────────────────────────────
         val <- input[[paste0("f_", d$id)]]
         if (is.null(val)) next
         seuil_val <- if (d$fmt == "pct") val / 100 else val
@@ -615,29 +658,58 @@ mod_finance4_server <- function(id, con) {
       paste0(nrow(df_filtres4()), " compagnies")
     })
 
-    output$table_filtrees4 <- shiny::renderTable({
+    output$table_filtrees4 <- shiny::renderUI({
       df <- df_filtres4() |> dplyr::arrange(ratio_moyen)
       if (nrow(df) == 0)
-        return(data.frame(Message = "Aucune compagnie ne correspond aux filtres."))
-      df |> dplyr::transmute(
-        Ticker    = symbol,
-        Compagnie = companyname,
-        Secteur   = sector,
-        `Mkt Cap` = dplyr::if_else(
-          is.na(mktcap_m), "N/D",
-          dplyr::case_when(
-            mktcap_m >= 200000 ~ paste0(round(mktcap_m / 1000, 1), " T"),
-            mktcap_m >=   2000 ~ paste0(round(mktcap_m / 1000, 1), " G"),
-            TRUE               ~ paste0(round(mktcap_m), " M")
-          )
-        ),
-        `BR moyen` = dplyr::if_else(
-          is.na(ratio_moyen), "N/D",
-          scales::percent(ratio_moyen, accuracy = 1)
+        return(shiny::tags$p(class = "text-muted fst-italic small px-2 pt-2",
+                             "Aucune compagnie ne correspond aux filtres."))
+
+      fmt_cap <- function(x) {
+        if (is.na(x)) return("N/D")
+        if (x >= 200000) paste0(round(x / 1000, 1), " T")
+        else if (x >= 2000) paste0(round(x / 1000, 1), " G")
+        else paste0(round(x), " M")
+      }
+
+      shiny::tags$table(
+        class = "table table-sm table-hover table-striped mb-0",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th("Ticker"),
+          shiny::tags$th("Compagnie"),
+          shiny::tags$th("Secteur"),
+          shiny::tags$th(class = "text-end", "Mkt Cap"),
+          shiny::tags$th(class = "text-end", "Yield")
+        )),
+        shiny::tags$tbody(
+          lapply(seq_len(nrow(df)), function(i) {
+            row      <- df[i, ]
+            onclick  <- sprintf(
+              "Shiny.setInputValue('%s', '%s', {priority: 'event'})",
+              session$ns("clicked_symbol"), row$symbol
+            )
+            shiny::tags$tr(
+              style   = "cursor:pointer;",
+              onclick = onclick,
+              shiny::tags$td(shiny::tags$b(row$symbol)),
+              shiny::tags$td(row$companyname),
+              shiny::tags$td(row$sector),
+              shiny::tags$td(class = "text-end", fmt_cap(row$mktcap_m)),
+              shiny::tags$td(class = "text-end",
+                             if (is.na(row$yield)) "N/D"
+                             else scales::percent(row$yield, accuracy = 0.1))
+            )
+          })
         )
       )
-    }, striped = TRUE, hover = TRUE, bordered = FALSE,
-       spacing = "xs", width = "100%")
+    })
+
+    # Navigation vers Détail compagnie au clic sur une ligne du tableau
+    shiny::observeEvent(input$clicked_symbol, {
+      shiny::req(nchar(input$clicked_symbol) > 0)
+      shiny::updateSelectInput(session, "symbol",
+                               selected = input$clicked_symbol)
+      bslib::nav_select("main_nav", "D\u00e9tail compagnie", session = session)
+    })
 
     # Sync sélecteur symbole
     shiny::observe({
@@ -666,7 +738,7 @@ mod_finance4_server <- function(id, con) {
     # Historique valorisation pour le graphique (chargé à la demande)
     val_hist4 <- shiny::reactive({
       shiny::req(input$symbol, nchar(input$symbol) > 0)
-      dplyr::tbl(con, "valuation_build") |>
+      dplyr::tbl(con, dbplyr::in_schema("stocktools", "valuation_build")) |>
         dplyr::filter(symbol == !!input$symbol) |>
         dplyr::collect() |>
         dplyr::mutate(date = as.Date(date)) |>
@@ -753,117 +825,16 @@ mod_finance4_server <- function(id, con) {
           .section_qualite("Rentabilit\u00e9"),
           .lq2("ROA",         .fmt_pct2(d$roa),    .fmt_pct2(r$roa),    .sig2(d$roa,    r$roa)),
           .lq2("ROE",         .fmt_pct2(d$roe),    .fmt_pct2(r$roe),    .sig2(d$roe,    r$roe)),
-          .lq2("Moy. ROA 5a", .fmt_pct2(roa5),     "\u2014",            .sig2(roa5,     r$roa)),
-          .lq2("Moy. ROE 5a", .fmt_pct2(roe5),     "\u2014",            .sig2(roe5,     r$roe)),
+          .lq2("Moy. ROA 5a", .fmt_pct2(roa5),     .fmt_pct2(r$roa_moy5), .sig2(roa5,  r$roa_moy5)),
+          .lq2("Moy. ROE 5a", .fmt_pct2(roe5),     .fmt_pct2(r$roe_moy5), .sig2(roe5,  r$roe_moy5)),
           .section_qualite("Marges"),
           .lq2("Marge brute",  .fmt_pct2(d$m_brut),  .fmt_pct2(r$m_brut),  .sig2(d$m_brut,  r$m_brut)),
           .lq2("Marge EBITDA", .fmt_pct2(d$m_ebitda),.fmt_pct2(r$m_ebitda),.sig2(d$m_ebitda,r$m_ebitda)),
           .lq2("Marge nette",  .fmt_pct2(d$m_net),   .fmt_pct2(r$m_net),   .sig2(d$m_net,   r$m_net)),
-          .lq2("Marge FCF",    .fmt_pct2(d$fcf_rev), .fmt_pct2(r$fcf_rev), .sig2(d$fcf_rev, r$fcf_rev))
-        )
-      )
-    })
-
-    # =========================================================================
-    # Tableau Valorisation
-    # =========================================================================
-
-    output$tableau_valorisation4 <- shiny::renderUI({
-      shiny::req(nrow(donnees_symbol4()) > 0)
-      d   <- donnees_symbol4()
-      sec <- d$sector
-      ref <- secteur_med4 |> dplyr::filter(sector == sec)
-      r   <- if (nrow(ref) == 1) ref else
-        as.data.frame(as.list(stats::setNames(
-          rep(NA_real_, length(cols_med4)), cols_med4)))
-
-      shiny::tags$table(
-        class = "table table-sm table-hover mb-0",
-        shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th("Ratio"),
-          shiny::tags$th(class = "text-end", "Cie"),
-          shiny::tags$th(class = "text-end text-muted", "Secteur"),
-          shiny::tags$th(class = "text-center", "")
-        )),
-        shiny::tags$tbody(
-          .lq2("P/S",      .fmt_x2(d$p_to_s_calc),
-               .fmt_x2(r$p_to_s_calc),
-               .sig2(d$p_to_s_calc,   r$p_to_s_calc,   inverse = TRUE)),
-          .lq2("P/EBITDA", .fmt_x2(d$p_to_ebd_calc),
-               .fmt_x2(r$p_to_ebd_calc),
-               .sig2(d$p_to_ebd_calc, r$p_to_ebd_calc, inverse = TRUE)),
-          .lq2("P/E",      .fmt_x2(d$pe_calc),
-               .fmt_x2(r$pe_calc),
-               .sig2(d$pe_calc,       r$pe_calc,        inverse = TRUE)),
-          .lq2("PEG",      .fmt_num2(d$peg_calc),
-               .fmt_num2(r$peg_calc),
-               .sig2(d$peg_calc,      r$peg_calc,       inverse = TRUE))
-        )
-      )
-    })
-
-    # =========================================================================
-    # Tableau Croissance — Co. 1a / Sect. / Ind. / CAGR 3a / 5a / 10a
-    # =========================================================================
-
-    output$tableau_croissance4 <- shiny::renderUI({
-      shiny::req(nrow(donnees_symbol4()) > 0)
-      d   <- donnees_symbol4()
-      sec <- d$sector
-      ind <- d$industry
-
-      s_med <- secteur_cagr_med4   |> dplyr::filter(sector   == sec)
-      i_med <- industrie_cagr_med4 |> dplyr::filter(industry == ind)
-
-      get_med <- function(df, col)
-        if (nrow(df) == 1 && col %in% names(df)) df[[col]] else NA_real_
-
-      px1 <- d$cagr_1y; px3 <- d$cagr_3y; px5 <- d$cagr_5y; px10 <- NA_real_
-
-      ligne_cagr <- function(label, c1, s1, i1, c3, c5, c10) {
-        shiny::tags$tr(
-          shiny::tags$td(class = "small", label),
-          .td_cagr3(c1,  px1),
-          .td_ref3(s1),
-          .td_ref3(i1),
-          .td_cagr3(c3,  px3),
-          .td_cagr3(c5,  px5),
-          .td_cagr3(c10, px10)
-        )
-      }
-
-      shiny::tags$table(
-        class = "table table-sm table-hover mb-0",
-        shiny::tags$thead(shiny::tags$tr(
-          shiny::tags$th("M\u00e9trique"),
-          shiny::tags$th(class = "text-end small", "Co. 1a"),
-          shiny::tags$th(class = "text-end small text-muted", "Sect."),
-          shiny::tags$th(class = "text-end small text-muted", "Ind."),
-          shiny::tags$th(class = "text-end small", "3a"),
-          shiny::tags$th(class = "text-end small", "5a"),
-          shiny::tags$th(class = "text-end small", "10a")
-        )),
-        shiny::tags$tbody(
-          ligne_cagr("Sales Gr.",
-            d$cagr_1_is_revenue,
-            get_med(s_med, "cagr_1_is_revenue"),
-            get_med(i_med, "cagr_1_is_revenue"),
-            d$cagr_3_is_revenue, d$cagr_5_is_revenue, d$cagr_10_is_revenue),
-          ligne_cagr("EBITDA Gr.",
-            d$cagr_1_is_ebitda,
-            get_med(s_med, "cagr_1_is_ebitda"),
-            get_med(i_med, "cagr_1_is_ebitda"),
-            d$cagr_3_is_ebitda, d$cagr_5_is_ebitda, d$cagr_10_is_ebitda),
-          ligne_cagr("EPS Gr.",
-            d$cagr_1_is_epsdiluted,
-            get_med(s_med, "cagr_1_is_epsdiluted"),
-            get_med(i_med, "cagr_1_is_epsdiluted"),
-            d$cagr_3_is_epsdiluted, d$cagr_5_is_epsdiluted, d$cagr_10_is_epsdiluted),
-          ligne_cagr("FCF Gr.",
-            d$cagr_1_cf_freecashflow,
-            get_med(s_med, "cagr_1_cf_freecashflow"),
-            get_med(i_med, "cagr_1_cf_freecashflow"),
-            d$cagr_3_cf_freecashflow, d$cagr_5_cf_freecashflow, d$cagr_10_cf_freecashflow)
+          .lq2("Marge FCF",    .fmt_pct2(d$fcf_rev), .fmt_pct2(r$fcf_rev), .sig2(d$fcf_rev, r$fcf_rev)),
+          .section_qualite("Valorisation"),
+          .lq2("P/E",  .fmt_x2(d$pe_calc),    .fmt_x2(r$pe_calc),    .sig2(d$pe_calc,  r$pe_calc,  inverse = TRUE)),
+          .lq2("PEG",  .fmt_num2(d$peg_calc),  .fmt_num2(r$peg_calc), .sig2(d$peg_calc, r$peg_calc, inverse = TRUE))
         )
       )
     })
@@ -984,6 +955,109 @@ mod_finance4_server <- function(id, con) {
     })
 
     # =========================================================================
+    # Tableau Croissance — Prix / Fondamentaux / Dividendes
+    # =========================================================================
+
+    output$tableau_croissance4 <- shiny::renderUI({
+      shiny::req(nrow(donnees_symbol4()) > 0)
+      d   <- donnees_symbol4()
+      sec <- d$sector
+      ind <- d$industry
+
+      s_med <- secteur_cagr_med4   |> dplyr::filter(sector   == sec)
+      i_med <- industrie_cagr_med4 |> dplyr::filter(industry == ind)
+
+      get_med <- function(df, col)
+        if (nrow(df) == 1 && col %in% names(df)) df[[col]] else NA_real_
+
+      px1 <- d$cagr_1y; px3 <- d$cagr_3y; px5 <- d$cagr_5y; px10 <- NA_real_
+
+      # Ligne fondamentaux : colorée vs prix CAGR de même période
+      ligne_cagr <- function(label, c1, s1, i1, c3, c5, c10) {
+        shiny::tags$tr(
+          shiny::tags$td(class = "small", label),
+          .td_cagr3(c1,  px1),
+          .td_ref3(s1),
+          .td_ref3(i1),
+          .td_cagr3(c3,  px3),
+          .td_cagr3(c5,  px5),
+          .td_cagr3(c10, px10)
+        )
+      }
+
+      # Ligne prix : affichée en gris (valeur de référence, pas de coloration)
+      ligne_prix <- function(label, c1, c3, c5, c10) {
+        shiny::tags$tr(
+          class = "table-light",
+          shiny::tags$td(class = "small fw-semibold", label),
+          .td_ref3(c1),
+          shiny::tags$td(class = "text-end text-muted small", "\u2014"),
+          shiny::tags$td(class = "text-end text-muted small", "\u2014"),
+          .td_ref3(c3),
+          .td_ref3(c5),
+          .td_ref3(c10)
+        )
+      }
+
+      # Ligne dividendes : colorée vs prix CAGR (croissance div > prix = vert)
+      ligne_div <- function(label, c1, c3, c5, c10) {
+        shiny::tags$tr(
+          shiny::tags$td(class = "small", label),
+          .td_cagr3(c1,  px1),
+          shiny::tags$td(class = "text-end text-muted small", "\u2014"),
+          shiny::tags$td(class = "text-end text-muted small", "\u2014"),
+          .td_cagr3(c3,  px3),
+          .td_cagr3(c5,  px5),
+          .td_cagr3(c10, px10)
+        )
+      }
+
+      shiny::tags$table(
+        class = "table table-sm table-hover mb-0",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th("M\u00e9trique"),
+          shiny::tags$th(class = "text-end small", "Co. 1a"),
+          shiny::tags$th(class = "text-end small text-muted", "Sect."),
+          shiny::tags$th(class = "text-end small text-muted", "Ind."),
+          shiny::tags$th(class = "text-end small", "3a"),
+          shiny::tags$th(class = "text-end small", "5a"),
+          shiny::tags$th(class = "text-end small", "10a")
+        )),
+        shiny::tags$tbody(
+          # ── Prix (référence) ───────────────────────────────────────────
+          ligne_prix("Prix",
+            d$cagr_1y, d$cagr_3y, d$cagr_5y, d$cagr_10y),
+          # ── Fondamentaux ───────────────────────────────────────────────
+          .section_qualite("Fondamentaux"),
+          ligne_cagr("Sales Gr.",
+            d$cagr_1_is_revenue,
+            get_med(s_med, "cagr_1_is_revenue"),
+            get_med(i_med, "cagr_1_is_revenue"),
+            d$cagr_3_is_revenue, d$cagr_5_is_revenue, d$cagr_10_is_revenue),
+          ligne_cagr("EBITDA Gr.",
+            d$cagr_1_is_ebitda,
+            get_med(s_med, "cagr_1_is_ebitda"),
+            get_med(i_med, "cagr_1_is_ebitda"),
+            d$cagr_3_is_ebitda, d$cagr_5_is_ebitda, d$cagr_10_is_ebitda),
+          ligne_cagr("EPS Gr.",
+            d$cagr_1_is_epsdiluted,
+            get_med(s_med, "cagr_1_is_epsdiluted"),
+            get_med(i_med, "cagr_1_is_epsdiluted"),
+            d$cagr_3_is_epsdiluted, d$cagr_5_is_epsdiluted, d$cagr_10_is_epsdiluted),
+          ligne_cagr("FCF Gr.",
+            d$cagr_1_cf_freecashflow,
+            get_med(s_med, "cagr_1_cf_freecashflow"),
+            get_med(i_med, "cagr_1_cf_freecashflow"),
+            d$cagr_3_cf_freecashflow, d$cagr_5_cf_freecashflow, d$cagr_10_cf_freecashflow),
+          # ── Dividendes ─────────────────────────────────────────────────
+          .section_qualite("Dividendes"),
+          ligne_div("Div. Gr.",
+            d$cagr_div_1a, d$cagr_div_3a, d$cagr_div_5a, d$cagr_div_10a)
+        )
+      )
+    })
+
+    # =========================================================================
     # Tableau Dividendes (depuis dividendes_build)
     # =========================================================================
 
@@ -1002,16 +1076,12 @@ mod_finance4_server <- function(id, con) {
       txt_fcf_cov <- .fmt_x2(d$fcf_coverage)
 
       lignes <- list(
-        list("Yield estim\u00e9",        .fmt_pct2(d$yield, 0.1)),
+        list("Yield estim\u00e9",            .fmt_pct2(d$yield, 0.1)),
         list("Croissance r\u00e9guli\u00e8re", if (isTRUE(d$croissance_reguliere)) "Oui" else "Non"),
-        list("CAGR div. 1a",         .fmt_pct2(d$cagr_div_1a, 1)),
-        list("CAGR div. 3a",         .fmt_pct2(d$cagr_div_3a, 1)),
-        list("CAGR div. 5a",         .fmt_pct2(d$cagr_div_5a, 1)),
-        list("CAGR div. 10a",        .fmt_pct2(d$cagr_div_10a, 1)),
-        list("FCF Payout",           txt_fcf_pay),
-        list("FCF Coverage",         txt_fcf_cov),
-        list("Dividende sp\u00e9cial",   flag_special),
-        list("Div. irr\u00e9gulier",     flag_irregular)
+        list("FCF Payout",                txt_fcf_pay),
+        list("FCF Coverage",              txt_fcf_cov),
+        list("Dividende sp\u00e9cial",    flag_special),
+        list("Div. irr\u00e9gulier",      flag_irregular)
       )
 
       shiny::tags$table(
@@ -1031,7 +1101,12 @@ mod_finance4_server <- function(id, con) {
 
     output$tableau_structure4 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol4()) > 0)
-      d <- donnees_symbol4()
+      d   <- donnees_symbol4()
+      sec <- d$sector
+      ref <- secteur_med4 |> dplyr::filter(sector == sec)
+      r   <- if (nrow(ref) == 1) ref else
+        as.data.frame(as.list(stats::setNames(
+          rep(NA_real_, length(cols_med4)), cols_med4)))
 
       mktcap_cat <- if (is.na(d$mktcap_m)) "N/D"
                     else if (d$mktcap_m >= 200000) "Mega Cap"
@@ -1039,21 +1114,32 @@ mod_finance4_server <- function(id, con) {
                     else if (d$mktcap_m >=   2000) "Mid Cap"
                     else "Small Cap"
 
-      lignes <- list(
-        list("Dette / Actif",       .fmt_pct2(d$d_actif)),
-        list("Couverture int\u00e9r\u00eats", .fmt_x2(d$couv_interet)),
-        list("Ratio liquidit\u00e9",     .fmt_x2(d$ratio_courant)),
-        list("Market Cap",          mktcap_cat)
-      )
-
       shiny::tags$table(
-        class = "table table-sm mb-0",
-        shiny::tags$tbody(lapply(lignes, function(l) {
+        class = "table table-sm table-hover mb-0",
+        shiny::tags$thead(shiny::tags$tr(
+          shiny::tags$th("Ratio"),
+          shiny::tags$th(class = "text-end", "Cie"),
+          shiny::tags$th(class = "text-end text-muted", "Secteur"),
+          shiny::tags$th(class = "text-center", "")
+        )),
+        shiny::tags$tbody(
+          .lq2("Dette / Actif",
+               .fmt_pct2(d$d_actif),        .fmt_pct2(r$d_actif),
+               .sig2(d$d_actif,   r$d_actif,   inverse = TRUE)),
+          .lq2("PPPI",
+               .fmt_pct2(d$pppi),            .fmt_pct2(r$pppi),
+               .sig2(d$pppi,      r$pppi,      inverse = TRUE)),
+          .lq2("Couverture int\u00e9r\u00eats",
+               .fmt_x2(d$couv_interet),       .fmt_x2(r$couv_interet),
+               .sig2(d$couv_interet, r$couv_interet)),
+          .lq2("Ratio liquidit\u00e9",
+               .fmt_x2(d$ratio_courant),      .fmt_x2(r$ratio_courant),
+               .sig2(d$ratio_courant, r$ratio_courant)),
           shiny::tags$tr(
-            shiny::tags$td(l[[1]]),
-            shiny::tags$td(class = "text-end fw-semibold", l[[2]])
+            shiny::tags$td("Market Cap"),
+            shiny::tags$td(class = "text-end fw-semibold", colspan = 3, mktcap_cat)
           )
-        }))
+        )
       )
     })
 

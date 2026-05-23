@@ -21,7 +21,8 @@ keep_cols_is <- c(
 # Colonnes balance sheet
 keep_cols_bs <- c(
   "totalcurrentassets", "totalnoncurrentassets", "totalassets",
-  "totalcurrentliabilities", "totalnoncurrentliabilities", "totalliabilities", "totalstockholdersequity"
+  "totalcurrentliabilities", "totalnoncurrentliabilities", "totalliabilities", "totalstockholdersequity",
+  "shorttermdebt", "longtermdebt", "totaldebt"
 )
 
 # Colonnes cash flow

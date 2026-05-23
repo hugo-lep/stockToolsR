@@ -84,11 +84,11 @@ fmp_profile_get <- function(symbol, key_fmp_api) {
 #' }
 fmp_profile_add_to_db <- function(symbol, con, key_fmp_api, force = FALSE) {
 
-  if (!DBI::dbExistsTable(con, "cies_profile_orig")) {
+  if (!DBI::dbExistsTable(con, DBI::Id(schema = "stocktools", table = "cies_profile_orig"))) {
     stop("La table 'cies_profile_orig' n'existe pas.")
   }
 
-  cies_tbl <- dplyr::tbl(con, "cies_profile_orig")
+  cies_tbl <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "cies_profile_orig"))
 
   exists <- cies_tbl %>%
     dplyr::filter(symbol == !!symbol) %>%
@@ -103,9 +103,9 @@ fmp_profile_add_to_db <- function(symbol, con, key_fmp_api, force = FALSE) {
 
   profile <- fmp_profile_get(symbol = symbol,
                              key_fmp_api = key_fmp_api)
-  names(profile) <- tolower(names(profile))
 
   if (is.null(profile)) return(NULL)
+  names(profile) <- tolower(names(profile))
 
   if (!"symbol" %in% names(profile)) {
     profile$symbol <- symbol
@@ -117,14 +117,14 @@ fmp_profile_add_to_db <- function(symbol, con, key_fmp_api, force = FALSE) {
   if (exists) {
     DBI::dbExecute(
       con,
-      "DELETE FROM cies_profile_orig WHERE symbol = $1",
+      "DELETE FROM stocktools.cies_profile_orig WHERE symbol = $1",
       params = list(symbol)
     )
   }
 
   DBI::dbWriteTable(
     con,
-    "cies_profile_orig",
+    DBI::Id(schema = "stocktools", table = "cies_profile_orig"),
     profile,
     append = TRUE
   )
@@ -152,18 +152,18 @@ utils::globalVariables(c(
 #' @export
 cies_profile_build <- function(con) {
 
-  if (!DBI::dbExistsTable(con, "cies_profile_orig")) {
+  if (!DBI::dbExistsTable(con, DBI::Id(schema = "stocktools", table = "cies_profile_orig"))) {
     stop("La table 'cies_profile_orig' n'existe pas.")
   }
 
-  data <- tbl(con, "cies_profile_orig") %>%
+  data <- tbl(con, dbplyr::in_schema("stocktools", "cies_profile_orig")) %>%
     select(symbol, companyname, currency, cik, cusip, exchange, industry,
            website, description, sector, image, last_updated) %>%
     collect()
 
   DBI::dbWriteTable(
     con,
-    "cies_profile_build",
+    DBI::Id(schema = "stocktools", table = "cies_profile_build"),
     data,
     overwrite = TRUE
   )

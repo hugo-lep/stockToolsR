@@ -33,7 +33,7 @@ if (nrow(pending) == 0) {
       for (tbl in tables) {
         DBI::dbExecute(
           con,
-          paste0("DELETE FROM ", tbl, " WHERE symbol = $1"),
+          paste0("DELETE FROM stocktools.", tbl, " WHERE symbol = $1"),
           params = list(sym)
         )
       }

@@ -167,13 +167,13 @@
 build_dividendes_build <- function(con) {
 
   message("  [1/5] Chargement des dividendes...")
-  dividendes <- DBI::dbReadTable(con, "dividendes") |>
+  dividendes <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "dividendes")) |>
     dplyr::mutate(date = as.Date(date))
 
   message("  [2/5] Chargement des prix de référence (valuation_build)...")
   close_df <- DBI::dbGetQuery(con, "
     SELECT DISTINCT ON (symbol) symbol, close
-    FROM valuation_build
+    FROM stocktools.valuation_build
     ORDER BY symbol, date DESC
   ")
 
@@ -181,7 +181,7 @@ build_dividendes_build <- function(con) {
   fcf_df <- DBI::dbGetQuery(con, "
     SELECT DISTINCT ON (symbol)
       symbol, cf_freecashflow, is_weightedaverageshsout
-    FROM financial_stmts_build
+    FROM stocktools.financial_stmts_build
     ORDER BY symbol, date DESC
   ")
 
@@ -206,7 +206,9 @@ build_dividendes_build <- function(con) {
         !is.na(is_weightedaverageshsout) & is_weightedaverageshsout > 0,
         div_ttm * is_weightedaverageshsout,
         NA_real_
-      ),
+      )
+    ) |>
+    dplyr::mutate(
       fcf_payout = dplyr::if_else(
         !is.na(.div_total) & !is.na(cf_freecashflow) & cf_freecashflow != 0,
         .div_total / cf_freecashflow,
@@ -229,9 +231,11 @@ build_dividendes_build <- function(con) {
     )
 
   message("  [5/5] Écriture dans dividendes_build (", nrow(result), " lignes)...")
-  DBI::dbExecute(con, "TRUNCATE TABLE dividendes_build")
-  DBI::dbWriteTable(con, "dividendes_build", result, append = TRUE)
+  DBI::dbExecute(con, "TRUNCATE TABLE stocktools.dividendes_build")
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "dividendes_build"), result, append = TRUE)
   message("\u2714 dividendes_build : ", nrow(result), " compagnie(s).")
 
   invisible(result)
 }
+
+utils::globalVariables(".div_total")

@@ -34,7 +34,7 @@ update_stockprice <- function(con, symbols) {
   to_date <- Sys.Date()
 
   # dates max déjà en base pour les symboles demandés
-  existing_dates <- dplyr::tbl(con, "stockprice") |>
+  existing_dates <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
     dplyr::filter(symbol %in% !!symbols) |>
     dplyr::group_by(symbol) |>
     dplyr::summarise(last_date = max(date, na.rm = TRUE)) |>
@@ -55,7 +55,7 @@ update_stockprice <- function(con, symbols) {
         dplyr::select(-adjusted) %>%
         filter(date != to_date)
 
-      df_existing_keys <- dplyr::tbl(con, "stockprice") |>
+      df_existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
         dplyr::filter(symbol %in% !!existing_symbols, date >= !!from_date) |>
         dplyr::select(symbol, date) |>
         dplyr::collect()
@@ -63,7 +63,7 @@ update_stockprice <- function(con, symbols) {
       df_to_add <- dplyr::anti_join(df_new, df_existing_keys, by = c("symbol", "date"))
 
       if (nrow(df_to_add) > 0) {
-        DBI::dbWriteTable(con, "stockprice", df_to_add, append = TRUE)
+        DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "stockprice"), df_to_add, append = TRUE)
         message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les tickers existants.")
       } else {
         message("Rien à ajouter pour les tickers existants.")
@@ -84,7 +84,7 @@ update_stockprice <- function(con, symbols) {
       filter(date != to_date)
 
     if (!is.null(df_new) && nrow(df_new) > 0) {
-      DBI::dbWriteTable(con, "stockprice", df_new, append = TRUE)
+      DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "stockprice"), df_new, append = TRUE)
       message(nrow(df_new), " ligne(s) ajoutée(s) pour les nouveaux tickers.")
     }
   }
@@ -128,7 +128,7 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
   to_date <- Sys.Date() - 1
 
   # Tickers déjà présents vs absents de la table
-  existing_symbols <- dplyr::tbl(con, "dividendes") |>
+  existing_symbols <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
     dplyr::filter(symbol %in% !!symbols) |>
     dplyr::distinct(symbol) |>
     dplyr::collect() |>
@@ -139,7 +139,7 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
   # Cas 1 : tickers existants → un seul appel calendrier depuis max(date)
   if (length(existing_symbols) > 0) {
 
-    from_date <- dplyr::tbl(con, "dividendes") |>
+    from_date <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
       dplyr::filter(symbol %in% !!existing_symbols) |>
       dplyr::summarise(max_date = max(date, na.rm = TRUE)) |>
       dplyr::collect() |>
@@ -159,7 +159,7 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
         dplyr::filter(!is.na(date), symbol %in% existing_symbols)
 
       # Anti-join contre toute la table pour ces symboles
-      existing_keys <- dplyr::tbl(con, "dividendes") |>
+      existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
         dplyr::filter(symbol %in% !!existing_symbols) |>
         dplyr::select(symbol, date) |>
         dplyr::collect() |>
@@ -168,7 +168,7 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
       df_to_add <- dplyr::anti_join(df_cal, existing_keys, by = c("symbol", "date"))
 
       if (nrow(df_to_add) > 0) {
-        DBI::dbWriteTable(con, "dividendes", df_to_add, append = TRUE)
+        DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "dividendes"), df_to_add, append = TRUE)
         message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les tickers existants.")
       } else {
         message("Aucun nouveau dividende pour les tickers existants.")
@@ -194,7 +194,7 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
     if (nrow(df_new) > 0) {
 
       # Anti-join pour éviter les doublons (ex: script relancé à mi-chemin)
-      existing_keys_new <- dplyr::tbl(con, "dividendes") |>
+      existing_keys_new <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
         dplyr::filter(symbol %in% !!missing_symbols) |>
         dplyr::select(symbol, date) |>
         dplyr::collect() |>
@@ -203,7 +203,7 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
       df_to_add <- dplyr::anti_join(df_new, existing_keys_new, by = c("symbol", "date"))
 
       if (nrow(df_to_add) > 0) {
-        DBI::dbWriteTable(con, "dividendes", df_to_add, append = TRUE)
+        DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "dividendes"), df_to_add, append = TRUE)
         message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les nouveaux tickers.")
       } else {
         message("Aucun dividende à ajouter pour les nouveaux tickers.")

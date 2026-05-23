@@ -7,7 +7,7 @@ message("-- [5] Import des états financiers --")
 save_path <- "data/cies_order.rds"
 
 # --- Tickers déjà présents dans la base ---
-tickers_in_db <- dplyr::tbl(con, "qts_income_stmts_orig") |>
+tickers_in_db <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "qts_income_stmts_orig")) |>
   dplyr::distinct(symbol) |>
   dplyr::collect() |>
   dplyr::pull(symbol)

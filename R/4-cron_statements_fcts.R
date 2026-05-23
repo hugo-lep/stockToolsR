@@ -189,7 +189,7 @@ update_statement_table <- function(con, df, table_name, cols_ref, replace = FALS
     return(invisible(NULL))
   }
 
-  if (!DBI::dbExistsTable(con, table_name)) {
+  if (!DBI::dbExistsTable(con, DBI::Id(schema = "stocktools", table = table_name))) {
     stop("La table '", table_name, "' n'existe pas.")
   }
 
@@ -198,7 +198,7 @@ update_statement_table <- function(con, df, table_name, cols_ref, replace = FALS
     mutate(date = ymd(date))
   names(df) <- tolower(names(df))
 
-  existing_keys <- dplyr::tbl(con, table_name) |>
+  existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", table_name)) |>
     dplyr::select(dplyr::all_of(cols_ref)) |>
     dplyr::distinct() |>
     dplyr::collect()
@@ -215,7 +215,7 @@ update_statement_table <- function(con, df, table_name, cols_ref, replace = FALS
         DBI::dbExecute(
           con,
           paste0(
-            "DELETE FROM ", table_name,
+            "DELETE FROM stocktools.", table_name,
             " WHERE symbol = $1 AND date = $2"
           ),
           params = list(keys_to_delete$symbol[i], as.character(keys_to_delete$date[i]))
@@ -235,7 +235,7 @@ update_statement_table <- function(con, df, table_name, cols_ref, replace = FALS
     }
   }
 
-  DBI::dbWriteTable(con, table_name, df_to_insert, append = TRUE)
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = table_name), df_to_insert, append = TRUE)
   message(table_name, " : ", nrow(df_to_insert), " ligne(s) insérée(s).")
   invisible(df_to_insert)
 }
@@ -268,7 +268,7 @@ check_filing_exists <- function(con, symbol, expected_date, tolerance_days = 7) 
   date_to   <- as.character(as.Date(expected_date) + tolerance_days)
 
   check_table <- function(table_name) {
-    dplyr::tbl(con, table_name) |>
+    dplyr::tbl(con, dbplyr::in_schema("stocktools", table_name)) |>
       dplyr::filter(
         symbol     == !!symbol,
         filingdate >= !!date_from,

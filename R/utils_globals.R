@@ -88,6 +88,10 @@ utils::globalVariables(c(
   # ── Quality build ─────────────────────────────────────────────────────────────
   "roa_moy5", "roe_moy5",
   "date_stmts", "ebitda_p_share",
+  "pppi",
+
+  # ── Balance sheet — dette ─────────────────────────────────────────────────────
+  "bs_totaldebt", "bs_shorttermdebt", "bs_longtermdebt",
 
   # ── Prix CAGR (cagr_price_build) — mod_finance3 ───────────────────────────────
   "cagr_1y", "cagr_3y", "cagr_5y", "cagr_10y",

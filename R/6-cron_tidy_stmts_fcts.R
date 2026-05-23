@@ -58,7 +58,7 @@ tidy_stmts <- function(con,
   )
 
   # Trimestriels : somme glissante 4 trimestres (TTM), sauf actions en circulation
-  is_qts <- dplyr::tbl(con, "qts_income_stmts_orig") |>
+  is_qts <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "qts_income_stmts_orig")) |>
     dplyr::collect() |>
     dplyr::arrange(date) |>
     sel_or_all(cols_gen = keep_cols_gen, cols_x = keep_cols_is) |>
@@ -73,7 +73,7 @@ tidy_stmts <- function(con,
     dplyr::ungroup()
 
   # Annuels : chaque ligne représente déjà un FY complet
-  is_fy <- dplyr::tbl(con, "fy_income_stmts_orig") |>
+  is_fy <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "fy_income_stmts_orig")) |>
     dplyr::collect() |>
     sel_or_all(cols_gen = keep_cols_gen, cols_x = keep_cols_is) |>
     dplyr::mutate(period2 = "Q4")   # clé fictive pour l'anti_join
@@ -94,9 +94,9 @@ tidy_stmts <- function(con,
   # Balance sheet (snapshot — pas de rolling sum)
 
 
-  bs_fy <- dplyr::tbl(con, "fy_balance_stmts_orig") |> dplyr::collect()
+  bs_fy <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "fy_balance_stmts_orig")) |> dplyr::collect()
 
-  balance <- dplyr::tbl(con, "qts_balance_stmts_orig") |>
+  balance <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "qts_balance_stmts_orig")) |>
     dplyr::collect() |>
     dplyr::anti_join(bs_fy, by = c("date", "symbol")) |>
     dplyr::bind_rows(bs_fy) |>
@@ -118,12 +118,12 @@ tidy_stmts <- function(con,
   # Cash flow
 
 
-  cf_fy <- dplyr::tbl(con, "fy_cf_stmts_orig") |>
+  cf_fy <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "fy_cf_stmts_orig")) |>
     dplyr::collect() |>
     sel_or_all(cols_gen = keep_cols_gen, cols_x = keep_cols_cf) |>
     dplyr::mutate(dplyr::across(-dplyr::all_of(keep_cols_gen), as.double))
 
-  cf_qts <- dplyr::tbl(con, "qts_cf_stmts_orig") |>
+  cf_qts <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "qts_cf_stmts_orig")) |>
     dplyr::collect() |>
     dplyr::arrange(date) |>
     sel_or_all(cols_gen = keep_cols_gen, cols_x = keep_cols_cf) |>
@@ -183,7 +183,7 @@ tidy_stmts <- function(con,
            m_ebitda = is_ebitda / is_revenue,
            m_net = is_netincome / is_revenue)
 
-  DBI::dbWriteTable(con, "financial_stmts_build", final, overwrite = TRUE)
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "financial_stmts_build"), final, overwrite = TRUE)
   message(nrow(final), " ligne(s) écrite(s) dans financial_stmts_build.")
 
   invisible(final)

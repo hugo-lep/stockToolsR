@@ -20,7 +20,7 @@ latest_market_date <- tq_get("AAPL",
 message("Dernière date de marché : ", latest_market_date)
 
 # --- Tickers déjà à jour ---
-stockprice_up_to_date <- dplyr::tbl(con, "stockprice") |>
+stockprice_up_to_date <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
   dplyr::filter(symbol %in% tickers_scope) |>
   dplyr::group_by(symbol) |>
   dplyr::summarise(last_date = max(date, na.rm = TRUE)) |>

@@ -93,7 +93,7 @@ detect_and_insert_splits <- function(tickers,con, fmp_api_key) {
 
   purrr::pwalk(splits, function(symbol, split_date, split_ratio) {
     dbExecute(con, "
-    INSERT INTO split_log (symbol, split_date, split_ratio, status, detected_date)
+    INSERT INTO stocktools.split_log (symbol, split_date, split_ratio, status, detected_date)
     VALUES ($1, $2, $3, 'pending', CURRENT_DATE)
     ON CONFLICT (symbol, split_date) DO NOTHING;
   ", params = list(symbol, as.character(split_date), split_ratio))
@@ -123,7 +123,7 @@ detect_and_insert_splits <- function(tickers,con, fmp_api_key) {
 #' @export
 get_pending_splits <- function(con, horizon_days = -1) {
   date_limite <- Sys.Date() + horizon_days
-  DBI::dbReadTable(con, "split_log") |>
+  DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "split_log")) |>
     dplyr::filter(
       status == "pending",
       as.Date(split_date) <= date_limite
@@ -149,7 +149,7 @@ get_pending_splits <- function(con, horizon_days = -1) {
 #' @export
 confirm_split <- function(con, symbol, split_date, notes = NULL) {
   DBI::dbExecute(con, "
-    UPDATE split_log
+    UPDATE stocktools.split_log
     SET status         = 'confirmed',
         confirmed_date = CURRENT_DATE,
         rewrite_date   = CURRENT_DATE,

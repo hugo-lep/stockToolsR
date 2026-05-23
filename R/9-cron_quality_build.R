@@ -40,10 +40,10 @@ build_quality_build <- function(con) {
       is_epsdiluted, is_weightedaverageshsout, is_interestexpense,
       bs_totalassets, bs_totalstockholdersequity,
       bs_totalcurrentassets, bs_totalcurrentliabilities,
-      bs_totalliabilities,
+      bs_totalliabilities, bs_totaldebt,
       cf_freecashflow,
       m_brut, m_ebitda, m_net
-    FROM financial_stmts_build
+    FROM stocktools.financial_stmts_build
     ORDER BY symbol, date DESC
   ") |>
     dplyr::mutate(
@@ -60,13 +60,16 @@ build_quality_build <- function(con) {
         is_ebit / is_interestexpense, NA_real_),
       d_actif        = dplyr::if_else(
         !is.na(bs_totalassets) & bs_totalassets != 0,
-        bs_totalliabilities / bs_totalassets, NA_real_)
+        bs_totalliabilities / bs_totalassets, NA_real_),
+      pppi           = dplyr::if_else(
+        !is.na(bs_totaldebt) & !is.na(bs_totalassets) & bs_totalassets != 0,
+        bs_totaldebt / bs_totalassets, NA_real_)
     )
 
   # ── [2/5] Moyennes ROA / ROE sur les 5 dernières périodes ────────────────
   message("  [2/5] Calcul ROA/ROE moyens (5 dernières périodes)...")
 
-  stmts_moy5 <- dplyr::tbl(con, "financial_stmts_build") |>
+  stmts_moy5 <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "financial_stmts_build")) |>
     dplyr::select(symbol, date, is_netincome,
                   bs_totalassets, bs_totalstockholdersequity) |>
     dplyr::collect() |>
@@ -90,7 +93,7 @@ build_quality_build <- function(con) {
       buy_p_to_ebitda, sell_p_to_ebitda,
       buy_pe,          sell_pe,
       buy_pe_dil,      sell_pe_dil
-    FROM valuation_build
+    FROM stocktools.valuation_build
     ORDER BY symbol, date DESC
   ") |>
     dplyr::mutate(
@@ -111,10 +114,10 @@ build_quality_build <- function(con) {
   # On charge uniquement cagr_3_is_epsdiluted pour le calcul du PEG.
   cagr_peg <- DBI::dbGetQuery(con, "
     SELECT symbol, cagr_3_is_epsdiluted
-    FROM cagr_stmts_build
+    FROM stocktools.cagr_stmts_build
   ")
 
-  profile_data <- dplyr::tbl(con, "cies_profile_build") |>
+  profile_data <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "cies_profile_build")) |>
     dplyr::select(symbol, sector, industry) |>
     dplyr::collect()
 
@@ -158,7 +161,7 @@ build_quality_build <- function(con) {
       # Marges
       m_brut, m_ebitda, m_net, fcf_rev,
       # Solidité
-      ratio_courant, couv_interet, d_actif,
+      ratio_courant, couv_interet, d_actif, pppi,
       # Marché
       close, mktcap_m,
       # Valorisation
@@ -169,8 +172,8 @@ build_quality_build <- function(con) {
 
   # ── [5/5] Écriture ────────────────────────────────────────────────────────
   message("  [5/5] Écriture dans quality_build (", nrow(result), " lignes)...")
-  DBI::dbExecute(con, "TRUNCATE TABLE quality_build")
-  DBI::dbWriteTable(con, "quality_build", result, append = TRUE)
+  DBI::dbExecute(con, "TRUNCATE TABLE stocktools.quality_build")
+  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "quality_build"), result, append = TRUE)
   message("\u2714 quality_build : ", nrow(result), " compagnie(s).")
 
   invisible(result)

@@ -186,9 +186,9 @@ server <- function(input, output, session) {
   # Chargement des données au démarrage
   # ---------------------------------------------------------------------------
 
-  cagr_data <- dplyr::tbl(con, "cagr_stmts_build") |> dplyr::collect()
+  cagr_data <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "cagr_stmts_build")) |> dplyr::collect()
 
-  profile_data <- dplyr::tbl(con, "cies_profile_build") |>
+  profile_data <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "cies_profile_build")) |>
     dplyr::select(symbol, companyname, sector, industry) |>
     dplyr::collect()
 
@@ -199,7 +199,7 @@ server <- function(input, output, session) {
       buy_p_to_s, sell_p_to_s,
       buy_p_to_ebitda, sell_p_to_ebitda,
       buy_pe, sell_pe, buy_pe_dil, sell_pe_dil
-    FROM valuation_build
+    FROM stocktools.valuation_build
     ORDER BY symbol, date DESC
   ") |>
     dplyr::mutate(
@@ -220,7 +220,7 @@ server <- function(input, output, session) {
     SELECT DISTINCT ON (symbol)
       symbol, is_revenue, is_grossprofit, is_ebitda, is_netincome,
       cf_freecashflow, bs_totalcurrentassets, bs_totalcurrentliabilities
-    FROM financial_stmts_build
+    FROM stocktools.financial_stmts_build
     ORDER BY symbol, date DESC
   ") |>
     dplyr::mutate(
@@ -316,7 +316,7 @@ server <- function(input, output, session) {
 
   df_symbol <- reactive({
     req(input$symbol)
-    dplyr::tbl(con, "valuation_build") |>
+    dplyr::tbl(con, dbplyr::in_schema("stocktools", "valuation_build")) |>
       dplyr::filter(symbol == !!input$symbol) |>
       dplyr::collect() |>
       dplyr::mutate(date = as.Date(date))

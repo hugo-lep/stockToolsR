@@ -18,6 +18,7 @@ Imports:
     bsicons,
     bslib,
     DBI,
+    dbplyr,
     dplyr,
     ggplot2,
     glue,

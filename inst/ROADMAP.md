@@ -56,8 +56,31 @@ Améliorations identifiées durant le développement, à traiter ultérieurement
 - [ ] Module Shiny — objectif final du projet (package séparé)
   - Consommera `financial_stmts_build`, `stockprice`, `dividendes`
 
+- [ ] Tableau Croissance (`mod_finance4`) — ajouter des lignes CAGR
+  - Nécessite d'abord d'ajouter les colonnes au pipeline CAGR (`10-cagr_stmts.R` ou équivalent)
+  - Colonnes cibles : `bs_totalassets`, `bs_totalliabilities`, `cf_netcashprovidedbyoperatingactivities`
+  - Optionnel : variation des actions en circulation (`is_weightedaverageshsout`)
+  - Préfixes attendus dans `cagr_stmts_build` : `cagr_1_bs_totalassets`, `cagr_3_bs_totalassets`, etc.
+
+---
+
+## Dette technique — mod_finance4
+
+- [ ] **Révision complète de `mod_finance4.R`** (~1000 lignes, principalement généré par IA)
+  - Lire et comprendre chaque section avant d'aller plus loin
+  - Objectif : s'approprier le code, pas juste le faire fonctionner
+
+- [ ] **Séparation en plusieurs fichiers** une fois la révision faite
+  - Candidats : `helpers_finance_ui.R` (filter defs, builders, formateurs),
+    `helpers_finance_display.R` (tableaux, coloration), `mod_finance4.R` (UI + server seulement)
+
+- [ ] **Schémas CREATE TABLE manquants** — aucune définition SQL explicite pour les tables `_build`
+  - Si la DB est recréée, les colonnes/types devront être reconstruits à la main
+  - Ajouter un fichier `inst/sql/create_tables.sql` avec les définitions complètes
+
 ---
 
 ## Idées à évaluer
 
-*(vide pour l'instant)*
+- [ ] Préréglages de filtres sauvegardables par l'utilisateur (projet futur Shiny)
+- [ ] `cagr_10y` prix dans `cagr_price_build` — actuellement placeholder `NA_real_`
