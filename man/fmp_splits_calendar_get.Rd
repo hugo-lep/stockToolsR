@@ -14,9 +14,9 @@ fmp_splits_calendar_get(fmp_api_key, from = NULL, to = NULL)
 \item{to}{Date de fin au format "YYYY-MM-DD"}
 }
 \value{
-Un data.frame issu du JSON retourné par l’API, ou `NULL` si l’appel échoue.
+Un data.frame issu du JSON retourné par l'API, ou `NULL` si l'appel échoue.
 }
 \description{
-Récupère le calendrier des splits boursiers pour tous les tickers depuis l’API Financial Modeling Prep,
+Récupère le calendrier des splits boursiers pour tous les tickers depuis l'API Financial Modeling Prep,
 en filtrant sur une plage de dates.
 }

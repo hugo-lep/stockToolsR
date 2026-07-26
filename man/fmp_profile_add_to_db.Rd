@@ -17,14 +17,14 @@ fmp_profile_add_to_db(symbol, con, key_fmp_api, force = FALSE)
 }
 \value{
 Le `data.frame` retourné par `fmp_get_profile`, ou `NULL`
-si aucun appel API n’a été effectué.
+si aucun appel API n'a été effectué.
 }
 \description{
-Récupère le profil d’une compagnie via l’API Financial Modeling Prep
-et l’enregistre dans la table `cie_profile_orig`.
+Récupère le profil d'une compagnie via l'API Financial Modeling Prep
+et l'enregistre dans la table `cie_profile_orig`.
 
 La table doit déjà exister et contenir au moins une ligne.
-Si le symbole existe déjà et que `force = FALSE`, aucun appel API n’est fait.
+Si le symbole existe déjà et que `force = FALSE`, aucun appel API n'est fait.
 Si `force = TRUE`, le profil est re-téléchargé et remplace la ligne existante.
 }
 \examples{

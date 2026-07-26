@@ -17,7 +17,7 @@ detect_and_insert_splits(tickers, con, fmp_api_key)
 Invisiblement `NULL`. La fonction produit des messages sur la console indiquant les splits détectés et insérés.
 }
 \description{
-Appelle l’API Financial Modeling Prep pour récupérer les splits sur une fenêtre de ±10 jours autour de la date courante,
+Appelle l'API Financial Modeling Prep pour récupérer les splits sur une fenêtre de ±10 jours autour de la date courante,
 filtre uniquement les tickers du S&P 500, calcule le ratio de split, et les insère dans la table `split_log`
 avec le statut `"pending"`. Les doublons `(symbol, split_date)` sont ignorés grâce à `ON CONFLICT DO NOTHING`.
 }

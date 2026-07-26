@@ -31,6 +31,7 @@ getwd()
 s3_connection_HL()
 config_global <- s3readRDS_HL(object = "config_files/config_global.rds")
 key_fmp_api <- config_global$key_fmp_api
+key_fmp_api <- "a39630c01bb9eae83aab48108d115105"
 save_path  <- "data/cies_order.rds"
 
 # connecter tunnel SSH: ssh -L 5433:127.0.0.1:5432 hugo@158.69.221.155

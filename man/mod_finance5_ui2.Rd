@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_finance5.R
 \name{mod_finance5_ui2}
 \alias{mod_finance5_ui2}
-\title{Onglet Détail compagnie du module analyse boursière v5}
+\title{Onglet DÃ©tail compagnie du module analyse boursiÃ¨re v5}
 \usage{
 mod_finance5_ui2(id)
 }

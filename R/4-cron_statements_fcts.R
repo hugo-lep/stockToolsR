@@ -30,29 +30,29 @@
 #' }
 fmp_get_statement <- function(statement, symbol, limit, period, key_fmp_api) {
 
-  headers <- c(`Upgrade-Insecure-Requests` = "1")
+    headers <- c(`Upgrade-Insecure-Requests` = "1")
 
-  res <- tryCatch(
-    httr::GET(
-      url = paste0(
-        "https://financialmodelingprep.com/stable/",
-        statement, "-statement?symbol=", symbol,
-        "&limit=", limit,
-        "&period=", period,
-        "&apikey=", key_fmp_api
-      ),
-      httr::add_headers(.headers = headers),
-      query = list(datatype = "json")
-    ),
-    error = function(e) NULL
-  )
+    res <- tryCatch(
+        httr::GET(
+            url = paste0(
+                "https://financialmodelingprep.com/stable/",
+                statement, "-statement?symbol=", symbol,
+                "&limit=", limit,
+                "&period=", period,
+                "&apikey=", key_fmp_api
+            ),
+            httr::add_headers(.headers = headers),
+            query = list(datatype = "json")
+        ),
+        error = function(e) NULL
+    )
 
-  if (is.null(res) || httr::status_code(res) != 200) return(NULL)
+    if (is.null(res) || httr::status_code(res) != 200) return(NULL)
 
-  tryCatch(
-    jsonlite::fromJSON(rawToChar(res$content)),
-    error = function(e) NULL
-  )
+    tryCatch(
+        jsonlite::fromJSON(rawToChar(res$content)),
+        error = function(e) NULL
+    )
 }
 
 
@@ -88,37 +88,37 @@ fmp_get_statement <- function(statement, symbol, limit, period, key_fmp_api) {
 #' }
 fmp_get_stmts_new_cie <- function(symbol, key_fmp_api, limit) {
 
-  quarters   <- c("Q1", "Q2", "Q3", "Q4")
-  statements <- c("income", "balance-sheet", "cash-flow")
+    quarters   <- c("Q1", "Q2", "Q3", "Q4")
+    statements <- c("income", "balance-sheet", "cash-flow")
 
-  get_quarterly <- function(type) {
-    purrr::map(
-      quarters,
-      function(q) fmp_get_statement(
-        statement   = type,
-        symbol      = symbol,
-        limit       = limit,
-        period      = q,
-        key_fmp_api = key_fmp_api
-      )
-    )
-  }
+    get_quarterly <- function(type) {
+        purrr::map(
+            quarters,
+            function(q) fmp_get_statement(
+                statement   = type,
+                symbol      = symbol,
+                limit       = limit,
+                period      = q,
+                key_fmp_api = key_fmp_api
+            )
+        )
+    }
 
-  list(
-    income   = get_quarterly("income"),
-    balance  = get_quarterly("balance-sheet"),
-    cashflow = get_quarterly("cash-flow"),
-    annual   = purrr::map(
-      statements,
-      function(s) fmp_get_statement(
-        statement   = s,
-        symbol      = symbol,
-        limit       = limit,
-        period      = "FY",
-        key_fmp_api = key_fmp_api
-      )
+    list(
+        income   = get_quarterly("income"),
+        balance  = get_quarterly("balance-sheet"),
+        cashflow = get_quarterly("cash-flow"),
+        annual   = purrr::map(
+            statements,
+            function(s) fmp_get_statement(
+                statement   = s,
+                symbol      = symbol,
+                limit       = limit,
+                period      = "FY",
+                key_fmp_api = key_fmp_api
+            )
+        )
     )
-  )
 }
 
 
@@ -146,14 +146,44 @@ fmp_get_stmts_new_cie <- function(symbol, key_fmp_api, limit) {
 #' }
 fmp_original_stmts_update <- function(df, con, replace = FALSE) {
 
-  update_statement_table(con, df = dplyr::bind_rows(df$income),   "qts_income_stmts_orig",  c("date", "symbol"), replace)
-  update_statement_table(con, dplyr::bind_rows(df$balance),  "qts_balance_stmts_orig", c("date", "symbol"), replace)
-  update_statement_table(con, dplyr::bind_rows(df$cashflow), "qts_cf_stmts_orig",      c("date", "symbol"), replace)
-  update_statement_table(con, df$annual[[1]],                "fy_income_stmts_orig",   c("date", "symbol"), replace)
-  update_statement_table(con, df$annual[[2]],                "fy_balance_stmts_orig",  c("date", "symbol"), replace)
-  update_statement_table(con, df$annual[[3]],                "fy_cf_stmts_orig",       c("date", "symbol"), replace)
+    update_statement_table(
+        con, df = dplyr::bind_rows(df$income),
+        table_name = "qts_income_stmts_orig",
+        cols_ref   = c("date", "symbol"),
+        replace    = replace
+    )
+    update_statement_table(
+        con, df = dplyr::bind_rows(df$balance),
+        table_name = "qts_balance_stmts_orig",
+        cols_ref   = c("date", "symbol"),
+        replace    = replace
+    )
+    update_statement_table(
+        con, df = dplyr::bind_rows(df$cashflow),
+        table_name = "qts_cf_stmts_orig",
+        cols_ref   = c("date", "symbol"),
+        replace    = replace
+    )
+    update_statement_table(
+        con, df = df$annual[[1]],
+        table_name = "fy_income_stmts_orig",
+        cols_ref   = c("date", "symbol"),
+        replace    = replace
+    )
+    update_statement_table(
+        con, df = df$annual[[2]],
+        table_name = "fy_balance_stmts_orig",
+        cols_ref   = c("date", "symbol"),
+        replace    = replace
+    )
+    update_statement_table(
+        con, df = df$annual[[3]],
+        table_name = "fy_cf_stmts_orig",
+        cols_ref   = c("date", "symbol"),
+        replace    = replace
+    )
 
-  invisible(NULL)
+    invisible(NULL)
 }
 
 
@@ -183,61 +213,69 @@ fmp_original_stmts_update <- function(df, con, replace = FALSE) {
 #' @export
 update_statement_table <- function(con, df, table_name, cols_ref, replace = FALSE) {
 
-  # vérifications en premier, avant toute transformation
-  if (is.null(df) || nrow(df) == 0) {
-    message(table_name, " : aucune donnée à insérer.")
-    return(invisible(NULL))
-  }
-
-  if (!DBI::dbExistsTable(con, DBI::Id(schema = "stocktools", table = table_name))) {
-    stop("La table '", table_name, "' n'existe pas.")
-  }
-
-  # conversion des dates et noms de colonnes en minuscules (PostgreSQL)
-  df <- df %>%
-    mutate(date = ymd(date))
-  names(df) <- tolower(names(df))
-
-  existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", table_name)) |>
-    dplyr::select(dplyr::all_of(cols_ref)) |>
-    dplyr::distinct() |>
-    dplyr::collect()
-
-  if (replace) {
-    keys_to_delete <- df |>
-      dplyr::select(dplyr::all_of(cols_ref)) |>
-      dplyr::distinct() |>
-      dplyr::semi_join(existing_keys, by = cols_ref)
-
-    if (nrow(keys_to_delete) > 0) {
-      # suppression ligne par ligne pour éviter la concaténation SQL
-      for (i in seq_len(nrow(keys_to_delete))) {
-        DBI::dbExecute(
-          con,
-          paste0(
-            "DELETE FROM stocktools.", table_name,
-            " WHERE symbol = $1 AND date = $2"
-          ),
-          params = list(keys_to_delete$symbol[i], as.character(keys_to_delete$date[i]))
-        )
-      }
+    # vérifications en premier, avant toute transformation
+    if (is.null(df) || nrow(df) == 0) {
+        message(table_name, " : aucune donnée à insérer.")
+        return(invisible(NULL))
     }
 
-    df_to_insert <- df
-
-  } else {
-    df_to_insert <- df |>
-      dplyr::anti_join(existing_keys, by = cols_ref)
-
-    if (nrow(df_to_insert) == 0) {
-      message(table_name, " : rien à ajouter.")
-      return(invisible(NULL))
+    if (!DBI::dbExistsTable(con, DBI::Id(schema = "stocktools", table = table_name))) {
+        stop("La table '", table_name, "' n'existe pas.")
     }
-  }
 
-  DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = table_name), df_to_insert, append = TRUE)
-  message(table_name, " : ", nrow(df_to_insert), " ligne(s) insérée(s).")
-  invisible(df_to_insert)
+    # conversion des dates et noms de colonnes en minuscules (PostgreSQL)
+    df <- df |>
+        mutate(date = ymd(date))
+    names(df) <- tolower(names(df))
+
+    existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", table_name)) |>
+        dplyr::select(dplyr::all_of(cols_ref)) |>
+        dplyr::distinct() |>
+        dplyr::collect()
+
+    if (replace) {
+        keys_to_delete <- df |>
+            dplyr::select(dplyr::all_of(cols_ref)) |>
+            dplyr::distinct() |>
+            dplyr::semi_join(existing_keys, by = cols_ref)
+
+        if (nrow(keys_to_delete) > 0) {
+            # suppression ligne par ligne pour éviter la concaténation SQL
+            for (i in seq_len(nrow(keys_to_delete))) {
+                DBI::dbExecute(
+                    con,
+                    paste0(
+                        "DELETE FROM stocktools.", table_name,
+                        " WHERE symbol = $1 AND date = $2"
+                    ),
+                    params = list(
+                        keys_to_delete$symbol[i],
+                        as.character(keys_to_delete$date[i])
+                    )
+                )
+            }
+        }
+
+        df_to_insert <- df
+
+    } else {
+        df_to_insert <- df |>
+            dplyr::anti_join(existing_keys, by = cols_ref)
+
+        if (nrow(df_to_insert) == 0) {
+            message(table_name, " : rien à ajouter.")
+            return(invisible(NULL))
+        }
+    }
+
+    DBI::dbWriteTable(
+        conn      = con,
+        name      = DBI::Id(schema = "stocktools", table = table_name),
+        value     = df_to_insert,
+        append    = TRUE
+    )
+    message(table_name, " : ", nrow(df_to_insert), " ligne(s) insérée(s).")
+    invisible(df_to_insert)
 }
 
 
@@ -264,23 +302,23 @@ update_statement_table <- function(con, df, table_name, cols_ref, replace = FALS
 #' @export
 check_filing_exists <- function(con, symbol, expected_date, tolerance_days = 7) {
 
-  date_from <- as.character(as.Date(expected_date) - tolerance_days)
-  date_to   <- as.character(as.Date(expected_date) + tolerance_days)
+    date_from <- as.character(as.Date(expected_date) - tolerance_days)
+    date_to   <- as.character(as.Date(expected_date) + tolerance_days)
 
-  check_table <- function(table_name) {
-    dplyr::tbl(con, dbplyr::in_schema("stocktools", table_name)) |>
-      dplyr::filter(
-        symbol     == !!symbol,
-        filingdate >= !!date_from,
-        filingdate <= !!date_to
-      ) |>
-      dplyr::collect() |>
-      nrow() > 0
-  }
+    check_table <- function(table_name) {
+        dplyr::tbl(con, dbplyr::in_schema("stocktools", table_name)) |>
+            dplyr::filter(
+                symbol     == !!symbol,
+                filingdate >= !!date_from,
+                filingdate <= !!date_to
+            ) |>
+            dplyr::collect() |>
+            nrow() > 0
+    }
 
-  list(
-    inc_status = ifelse(check_table("qts_income_stmts_orig"),  "complete", "incomplete"),
-    bs_status  = ifelse(check_table("qts_balance_stmts_orig"), "complete", "incomplete"),
-    cf_status  = ifelse(check_table("qts_cf_stmts_orig"),      "complete", "incomplete")
-  )
+    list(
+        inc_status = ifelse(check_table("qts_income_stmts_orig"),  "complete", "incomplete"),
+        bs_status  = ifelse(check_table("qts_balance_stmts_orig"), "complete", "incomplete"),
+        cf_status  = ifelse(check_table("qts_cf_stmts_orig"),      "complete", "incomplete")
+    )
 }

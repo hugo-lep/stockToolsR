@@ -25,5 +25,5 @@ Un data.frame ou NULL
 }
 \description{
 Récupère une liste de tickers filtrés (exchange, market cap, etc.)
-depuis l’API Financial Modeling Prep.
+depuis l'API Financial Modeling Prep.
 }

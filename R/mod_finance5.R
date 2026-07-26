@@ -1,25 +1,23 @@
-# =============================================================================
-# mod_finance5.R — Module Shiny : analyse boursière (version 5)
+﻿# mod_finance5.R â€” Module Shiny : analyse boursiÃ¨re (version 5)
 #
 # Layout deux sections (CSS grid) sans scroll :
-#   TOP    — Qualité : Marges | ROA/ROE + Croissance | Structure financière
-#   BOTTOM — Prix    : Valorisation | Graphique + boîtes | Dividendes
+#   TOP    â€” QualitÃ© : Marges | ROA/ROE + Croissance | Structure financiÃ¨re
+#   BOTTOM â€” Prix    : Valorisation | Graphique + boÃ®tes | Dividendes
 #
-# Réutilise les helpers définis dans mod_finance4.R (même namespace package) :
+# RÃ©utilise les helpers dÃ©finis dans mod_finance4.R (mÃªme namespace package) :
 #   .ligne_qualite, .section_qualite, .lq2, .sig2, .fmt_pct2, .fmt_x2,
 #   .fmt_num2, .sig_vs_prix3, .td_cagr3, .td_ref3, .metric_val_cols3,
 #   .filter_defs2, .presets_defs3, .build_checkbox_ui2, .build_sliders_actifs2
 #
-# Fonctions exportées :
-#   mod_finance5_ui1(id)         — nav_panel "Filtres"
-#   mod_finance5_ui2(id)         — nav_panel "Détail compagnie"
-#   mod_finance5_ui(id)          — navset_bar wrapper
-#   mod_finance5_server(id, con) — logique serveur
-# =============================================================================
+# Fonctions exportÃ©es :
+#   mod_finance5_ui1(id)         â€” nav_panel "Filtres"
+#   mod_finance5_ui2(id)         â€” nav_panel "DÃ©tail compagnie"
+#   mod_finance5_ui(id)          â€” navset_bar wrapper
+#   mod_finance5_server(id, con) â€” logique serveur
 
-# ── UI 1 — Onglet Filtres ────────────────────────────────────────────────────
+# â”€â”€ UI 1 â€” Onglet Filtres â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' Onglet Filtres du module analyse boursière v5
+#' Onglet Filtres du module analyse boursiÃ¨re v5
 #'
 #' @param id Identifiant du module
 #' @return `bslib::nav_panel`
@@ -40,9 +38,9 @@ mod_finance5_ui1 <- function(id) {
     bslib::layout_sidebar(
       fill = TRUE,
 
-      # ── Sidebar Sélection ─────────────────────────────────────────────────
+      # â”€â”€ Sidebar SÃ©lection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       sidebar = bslib::sidebar(
-        title = "Sélection",
+        title = "SÃ©lection",
         width = 230,
 
         shiny::selectInput(ns("preset"), "Pr\u00e9r\u00e9glage :",
@@ -61,7 +59,7 @@ mod_finance5_ui1 <- function(id) {
       bslib::layout_sidebar(
         fill = TRUE,
 
-        # ── Sidebar Filtres actifs ─────────────────────────────────────────
+        # â”€â”€ Sidebar Filtres actifs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         sidebar = bslib::sidebar(
           title = "Filtres actifs",
           open  = "always",
@@ -69,7 +67,7 @@ mod_finance5_ui1 <- function(id) {
           shiny::uiOutput(ns("sliders_dynamiques"))
         ),
 
-        # ── Tableau compagnies ─────────────────────────────────────────────
+        # â”€â”€ Tableau compagnies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         bslib::card(
           fill = TRUE,
           bslib::card_header(
@@ -94,9 +92,9 @@ mod_finance5_ui1 <- function(id) {
   )
 }
 
-# ── UI 2 — Onglet Détail compagnie ───────────────────────────────────────────
+# â”€â”€ UI 2 â€” Onglet DÃ©tail compagnie â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' Onglet Détail compagnie du module analyse boursière v5
+#' Onglet DÃ©tail compagnie du module analyse boursiÃ¨re v5
 #'
 #' Layout CSS grid deux sections sans scroll.
 #'
@@ -121,7 +119,7 @@ mod_finance5_ui2 <- function(id) {
         "gap: 0.4rem; overflow: hidden; padding: 0.25rem 0;"
       ),
 
-      # ── Barre sélecteur + info ──────────────────────────────────────────
+      # â”€â”€ Barre sÃ©lecteur + info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       shiny::tags$div(
         style = "flex: 0 0 auto;",
         shiny::tags$div(
@@ -135,11 +133,11 @@ mod_finance5_ui2 <- function(id) {
         )
       ),
 
-      # ── Conteneur deux sections ─────────────────────────────────────────
+      # â”€â”€ Conteneur deux sections â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       shiny::tags$div(
         style = "flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.5rem;",
 
-        # ─── Libellé section TOP ───────────────────────────────────────────
+        # â”€â”€â”€ LibellÃ© section TOP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         shiny::tags$div(
           style = "flex: 0 0 auto; padding: 0 0.125rem;",
           shiny::tags$small(
@@ -150,7 +148,7 @@ mod_finance5_ui2 <- function(id) {
           )
         ),
 
-        # ─── Section TOP : 3 cartes ────────────────────────────────────────
+        # â”€â”€â”€ Section TOP : 3 cartes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         shiny::tags$div(
           style = paste0(
             "flex: 1; min-height: 0; ",
@@ -189,7 +187,7 @@ mod_finance5_ui2 <- function(id) {
             )
           ),
 
-          # TOP-DROITE : Structure financière
+          # TOP-DROITE : Structure financiÃ¨re
           bslib::card(
             style = "height: 100%; margin: 0; min-height: 0;",
             fill  = TRUE,
@@ -204,7 +202,7 @@ mod_finance5_ui2 <- function(id) {
           )
         ),
 
-        # ─── Libellé section BOTTOM ────────────────────────────────────────
+        # â”€â”€â”€ LibellÃ© section BOTTOM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         shiny::tags$div(
           style = "flex: 0 0 auto; padding: 0 0.125rem;",
           shiny::tags$small(
@@ -215,7 +213,7 @@ mod_finance5_ui2 <- function(id) {
           )
         ),
 
-        # ─── Section BOTTOM : 3 cartes ─────────────────────────────────────
+        # â”€â”€â”€ Section BOTTOM : 3 cartes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         shiny::tags$div(
           style = paste0(
             "flex: 1; min-height: 0; ",
@@ -238,7 +236,7 @@ mod_finance5_ui2 <- function(id) {
             )
           ),
 
-          # BOTTOM-CENTRE : Graphique + boîtes profit
+          # BOTTOM-CENTRE : Graphique + boÃ®tes profit
           bslib::card(
             style = "height: 100%; margin: 0; min-height: 0;",
             fill  = TRUE,
@@ -252,7 +250,7 @@ mod_finance5_ui2 <- function(id) {
                 "display: flex; flex-direction: column; ",
                 "overflow: hidden; height: 100%;"
               ),
-              # Sélecteur durée — superposé en haut à gauche du graphique
+              # SÃ©lecteur durÃ©e â€” superposÃ© en haut Ã  gauche du graphique
               shiny::tags$div(
                 style = paste0(
                   "position: absolute; top: 0.25rem; left: 0.4rem; ",
@@ -269,7 +267,7 @@ mod_finance5_ui2 <- function(id) {
                 style = "flex: 1; min-height: 0;",
                 shiny::plotOutput(ns("graph_buy5"), height = "100%")
               ),
-              # Boîtes profit en bas
+              # BoÃ®tes profit en bas
               shiny::uiOutput(ns("buy_signal_ui5"))
             )
           ),
@@ -293,9 +291,9 @@ mod_finance5_ui2 <- function(id) {
   )
 }
 
-# ── UI complète ───────────────────────────────────────────────────────────────
+# â”€â”€ UI complÃ¨te â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' UI complète du module analyse boursière v5
+#' UI complÃ¨te du module analyse boursiÃ¨re v5
 #'
 #' @param id Identifiant du module
 #' @return `bslib::navset_bar`
@@ -310,9 +308,9 @@ mod_finance5_ui <- function(id) {
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────────
+# â”€â”€ Server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' Serveur du module analyse boursière v5
+#' Serveur du module analyse boursiÃ¨re v5
 #'
 #' @param id  Identifiant du module
 #' @param con Connexion DBI active (PostgreSQL)
@@ -333,9 +331,7 @@ mod_finance5_ui <- function(id) {
 mod_finance5_server <- function(id, con) {
   shiny::moduleServer(id, function(input, output, session) {
 
-    # =========================================================================
-    # Chargement des données
-    # =========================================================================
+    # Chargement des donnÃ©es
 
     message("  [1/5] quality_build...")
     quality <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "quality_build")) |>
@@ -380,7 +376,7 @@ mod_finance5_server <- function(id, con) {
       dplyr::left_join(cagr_stmts, by = "symbol") |>
       dplyr::left_join(cagr_price,  by = "symbol")
 
-    # ── Médianes sectorielles ─────────────────────────────────────────────
+    # â”€â”€ MÃ©dianes sectorielles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     cols_med5 <- c("roa", "roe", "roa_moy5", "roe_moy5",
                    "m_brut", "m_ebitda", "m_net", "fcf_rev",
                    "ratio_courant", "d_actif", "couv_interet",
@@ -414,9 +410,7 @@ mod_finance5_server <- function(id, con) {
         .groups = "drop"
       )
 
-    # =========================================================================
-    # Préréglages
-    # =========================================================================
+    # PrÃ©rÃ©glages
 
     shiny::observeEvent(input$preset, {
       shiny::req(nchar(input$preset) > 0)
@@ -446,9 +440,7 @@ mod_finance5_server <- function(id, con) {
       })
     }, ignoreInit = TRUE)
 
-    # =========================================================================
     # Filtre secteur
-    # =========================================================================
 
     secteurs <- c("Tous", sort(unique(stats::na.omit(base_data5$sector))))
     shiny::observeEvent(input$secteur_f, {
@@ -457,9 +449,7 @@ mod_finance5_server <- function(id, con) {
                                selected = "Tous")
     }, once = TRUE, ignoreNULL = TRUE, ignoreInit = FALSE)
 
-    # =========================================================================
     # Filtres actifs
-    # =========================================================================
 
     output$div_checkbox_ui <- shiny::renderUI({
       if (!isTRUE(input$avec_div)) return(NULL)
@@ -489,7 +479,7 @@ mod_finance5_server <- function(id, con) {
       c(base_actifs, div_actifs)
     })
 
-    # isolate() : évite boucle infinie lors de l'application d'un préréglage
+    # isolate() : Ã©vite boucle infinie lors de l'application d'un prÃ©rÃ©glage
     output$sliders_dynamiques <- shiny::renderUI({
       actifs <- filtres_actifs5()
       valeurs_courantes <- shiny::isolate(
@@ -502,9 +492,7 @@ mod_finance5_server <- function(id, con) {
                              actifs = actifs, valeurs_courantes = valeurs_courantes)
     })
 
-    # =========================================================================
-    # Filtrage réactif
-    # =========================================================================
+    # Filtrage rÃ©actif
 
     df_filtres5 <- shiny::reactive({
       df     <- base_data5
@@ -533,9 +521,7 @@ mod_finance5_server <- function(id, con) {
       df
     })
 
-    # =========================================================================
-    # Onglet Filtres — outputs
-    # =========================================================================
+    # Onglet Filtres â€” outputs
 
     output$n_filtrees5 <- shiny::renderText({
       paste0(nrow(df_filtres5()), " compagnies")
@@ -586,7 +572,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # Clic sur une ligne → naviguer vers Détail compagnie
+    # Clic sur une ligne â†’ naviguer vers DÃ©tail compagnie
     shiny::observeEvent(input$clicked_symbol, {
       shiny::req(nchar(input$clicked_symbol) > 0)
       shiny::updateSelectInput(session, "symbol",
@@ -594,7 +580,7 @@ mod_finance5_server <- function(id, con) {
       bslib::nav_select("main_nav", "D\u00e9tail compagnie", session = session)
     })
 
-    # Sync sélecteur symbole
+    # Sync sÃ©lecteur symbole
     shiny::observe({
       df <- df_filtres5() |> dplyr::arrange(symbol)
       if (nrow(df) == 0) {
@@ -609,9 +595,7 @@ mod_finance5_server <- function(id, con) {
                                selected = choices[1])
     })
 
-    # =========================================================================
-    # Données réactives — symbole sélectionné
-    # =========================================================================
+    # DonnÃ©es rÃ©actives â€” symbole sÃ©lectionnÃ©
 
     donnees_symbol5 <- shiny::reactive({
       shiny::req(input$symbol, nchar(input$symbol) > 0)
@@ -639,9 +623,7 @@ mod_finance5_server <- function(id, con) {
       df |> dplyr::arrange(date) |> dplyr::slice_tail(n = 1)
     })
 
-    # =========================================================================
     # Barre d'info compagnie
-    # =========================================================================
 
     output$info_bar5 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -671,9 +653,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Tableau Marges (TOP-GAUCHE)
-    # =========================================================================
 
     output$secteur_detail5 <- shiny::renderText({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -712,9 +692,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Tableau ROA/ROE historique (TOP-CENTRE, en haut)
-    # =========================================================================
 
     output$tableau_roa_roe5 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -725,7 +703,7 @@ mod_finance5_server <- function(id, con) {
         as.data.frame(as.list(stats::setNames(
           rep(NA_real_, length(cols_med5)), cols_med5)))
 
-      # Coloration : cie vs secteur (même période)
+      # Coloration : cie vs secteur (mÃªme pÃ©riode)
       td_val <- function(val, ref_val, inverse = FALSE) {
         sig <- .sig2(val, ref_val, inverse = inverse)
         bg  <- switch(sig,
@@ -775,9 +753,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Tableau Croissance (TOP-CENTRE, en bas)
-    # =========================================================================
 
     output$tableau_croissance5 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -872,9 +848,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
-    # Tableau Structure financière (TOP-DROITE)
-    # =========================================================================
+    # Tableau Structure financiÃ¨re (TOP-DROITE)
 
     output$tableau_structure5 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -920,9 +894,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Tableau Valorisation (BOTTOM-GAUCHE)
-    # =========================================================================
 
     output$secteur_val5 <- shiny::renderText({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -965,9 +937,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Graphique bandes buy/sell (BOTTOM-CENTRE)
-    # =========================================================================
 
     output$graph_buy5 <- shiny::renderPlot({
       df  <- val_hist5_filtered()
@@ -1006,9 +976,7 @@ mod_finance5_server <- function(id, con) {
                        plot.margin      = ggplot2::margin(4, 4, 4, 4))
     }, bg = "transparent")
 
-    # =========================================================================
-    # Boîtes profit (BOTTOM-CENTRE, sous le graphique)
-    # =========================================================================
+    # BoÃ®tes profit (BOTTOM-CENTRE, sous le graphique)
 
     output$buy_signal_ui5 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol5()) > 0)
@@ -1080,9 +1048,7 @@ mod_finance5_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Tableau Dividendes (BOTTOM-DROITE)
-    # =========================================================================
 
     output$tableau_dividendes5 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol5()) > 0)

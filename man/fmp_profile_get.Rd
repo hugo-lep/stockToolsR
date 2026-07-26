@@ -12,10 +12,10 @@ fmp_profile_get(symbol, key_fmp_api)
 \item{key_fmp_api}{Clé API Financial Modeling Prep}
 }
 \value{
-Un data.frame (ou liste) issu du JSON retourné par l’API,
-ou `NULL` en cas d’erreur.
+Un data.frame (ou liste) issu du JSON retourné par l'API,
+ou `NULL` en cas d'erreur.
 }
 \description{
-Récupère le profil d’une compagnie (description, secteur, CEO, site web, etc.)
-depuis l’API Financial Modeling Prep. Retourne `NULL` si l’appel échoue.
+Récupère le profil d'une compagnie (description, secteur, CEO, site web, etc.)
+depuis l'API Financial Modeling Prep. Retourne `NULL` si l'appel échoue.
 }

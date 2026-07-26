@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_finance5.R
 \name{mod_finance5_ui}
 \alias{mod_finance5_ui}
-\title{UI complète du module analyse boursière v5}
+\title{UI complÃ¨te du module analyse boursiÃ¨re v5}
 \usage{
 mod_finance5_ui(id)
 }
@@ -13,5 +13,5 @@ mod_finance5_ui(id)
 `bslib::navset_bar`
 }
 \description{
-UI complète du module analyse boursière v5
+UI complÃ¨te du module analyse boursiÃ¨re v5
 }

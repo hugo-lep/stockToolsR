@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_finance5.R
 \name{mod_finance5_ui1}
 \alias{mod_finance5_ui1}
-\title{Onglet Filtres du module analyse boursière v5}
+\title{Onglet Filtres du module analyse boursiÃ¨re v5}
 \usage{
 mod_finance5_ui1(id)
 }
@@ -13,5 +13,5 @@ mod_finance5_ui1(id)
 `bslib::nav_panel`
 }
 \description{
-Onglet Filtres du module analyse boursière v5
+Onglet Filtres du module analyse boursiÃ¨re v5
 }

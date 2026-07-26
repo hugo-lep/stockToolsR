@@ -1,10 +1,8 @@
-# =============================================================================
 # utils_globals.R — Suppressions R CMD check
 #
 # - utils::globalVariables() : noms de colonnes utilisés dans les verbes dplyr
 #   (pas de vraies variables globales — c'est le mécanisme standard tidyverse)
 # - @importFrom : fonctions de packages déjà en Imports dans DESCRIPTION
-# =============================================================================
 
 #' @importFrom stats na.omit setNames median
 #' @importFrom rlang .data :=

@@ -26,28 +26,28 @@
 #' }
 fmp_get_earnings_calendar <- function(from, to, key_fmp_api) {
 
-  headers <- c(`Upgrade-Insecure-Requests` = "1")
+    headers <- c(`Upgrade-Insecure-Requests` = "1")
 
-  res <- tryCatch(
-    httr::GET(
-      url   = paste0(
-        "https://financialmodelingprep.com/stable/earnings-calendar",
-        "?from=", from,
-        "&to=", to,
-        "&apikey=", key_fmp_api
-      ),
-      httr::add_headers(.headers = headers),
-      query = list(datatype = "json")
-    ),
-    error = function(e) NULL
-  )
+    res <- tryCatch(
+        httr::GET(
+            url   = paste0(
+                "https://financialmodelingprep.com/stable/earnings-calendar",
+                "?from=", from,
+                "&to=", to,
+                "&apikey=", key_fmp_api
+            ),
+            httr::add_headers(.headers = headers),
+            query = list(datatype = "json")
+        ),
+        error = function(e) NULL
+    )
 
-  if (is.null(res) || httr::status_code(res) != 200) return(NULL)
+    if (is.null(res) || httr::status_code(res) != 200) return(NULL)
 
-  tryCatch(
-    jsonlite::fromJSON(rawToChar(res$content)),
-    error = function(e) NULL
-  )
+    tryCatch(
+        jsonlite::fromJSON(rawToChar(res$content)),
+        error = function(e) NULL
+    )
 }
 
 
@@ -70,21 +70,21 @@ fmp_get_earnings_calendar <- function(from, to, key_fmp_api) {
 #' @export
 init_cies_order <- function(earning_calendar, save_path) {
 
-  cies_order <- earning_calendar |>
-    dplyr::select(symbol, date) |>
-    dplyr::rename(reportDate = date) |>
-    dplyr::mutate(
-      reportDate     = as.Date(reportDate),
-      reportDate_mod = reportDate,
-      inc_status     = "pending",
-      bs_status      = "pending",
-      cf_status      = "pending"
-    )
+    cies_order <- earning_calendar |>
+        dplyr::select(symbol, date) |>
+        dplyr::rename(reportDate = date) |>
+        dplyr::mutate(
+            reportDate     = as.Date(reportDate),
+            reportDate_mod = reportDate,
+            inc_status     = "pending",
+            bs_status      = "pending",
+            cf_status      = "pending"
+        )
 
-  s3db::s3saveRDS_HL(cies_order, save_path)
-  message("cies_order initialisé avec ", nrow(cies_order), " compagnie(s).")
+    s3db::s3saveRDS_HL(cies_order, save_path)
+    message("cies_order initialisé avec ", nrow(cies_order), " compagnie(s).")
 
-  invisible(cies_order)
+    invisible(cies_order)
 }
 
 
@@ -105,35 +105,35 @@ init_cies_order <- function(earning_calendar, save_path) {
 #' @export
 update_cies_order <- function(earning_calendar, save_path) {
 
-  cies_order <- s3db::s3readRDS_HL(save_path)
+    cies_order <- s3db::s3readRDS_HL(save_path)
 
-  new_entries <- earning_calendar |>
-    dplyr::select(symbol, date) |>
-    dplyr::rename(reportDate = date) |>
-    dplyr::mutate(
-      reportDate     = as.Date(reportDate),
-      reportDate_mod = reportDate,
-      inc_status     = "pending",
-      bs_status      = "pending",
-      cf_status      = "pending"
-    )
+    new_entries <- earning_calendar |>
+        dplyr::select(symbol, date) |>
+        dplyr::rename(reportDate = date) |>
+        dplyr::mutate(
+            reportDate     = as.Date(reportDate),
+            reportDate_mod = reportDate,
+            inc_status     = "pending",
+            bs_status      = "pending",
+            cf_status      = "pending"
+        )
 
-  truly_new <- new_entries |>
-    dplyr::filter(!symbol %in% cies_order$symbol)
+    truly_new <- new_entries |>
+        dplyr::filter(!symbol %in% cies_order$symbol)
 
-  if (nrow(truly_new) == 0) {
-    message("Aucune nouvelle compagnie à ajouter.")
-    return(invisible(cies_order))
-  }
+    if (nrow(truly_new) == 0) {
+        message("Aucune nouvelle compagnie à ajouter.")
+        return(invisible(cies_order))
+    }
 
-  message(nrow(truly_new), " nouvelle(s) compagnie(s) ajoutée(s) : ",
-          paste(truly_new$symbol, collapse = ", "))
+    message(nrow(truly_new), " nouvelle(s) compagnie(s) ajoutée(s) : ",
+            paste(truly_new$symbol, collapse = ", "))
 
-  cies_order <- cies_order |>
-    dplyr::bind_rows(truly_new) |>
-    dplyr::arrange(reportDate_mod)
+    cies_order <- cies_order |>
+        dplyr::bind_rows(truly_new) |>
+        dplyr::arrange(reportDate_mod)
 
-  s3db::s3saveRDS_HL(cies_order, save_path)
+    s3db::s3saveRDS_HL(cies_order, save_path)
 
-  invisible(cies_order)
+    invisible(cies_order)
 }

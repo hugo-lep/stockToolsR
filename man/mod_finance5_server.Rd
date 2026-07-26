@@ -2,7 +2,7 @@
 % Please edit documentation in R/mod_finance5.R
 \name{mod_finance5_server}
 \alias{mod_finance5_server}
-\title{Serveur du module analyse boursière v5}
+\title{Serveur du module analyse boursiÃ¨re v5}
 \usage{
 mod_finance5_server(id, con)
 }
@@ -12,5 +12,5 @@ mod_finance5_server(id, con)
 \item{con}{Connexion DBI active (PostgreSQL)}
 }
 \description{
-Serveur du module analyse boursière v5
+Serveur du module analyse boursiÃ¨re v5
 }

@@ -31,65 +31,75 @@
 #' }
 update_stockprice <- function(con, symbols) {
 
-  to_date <- Sys.Date()
+    to_date <- Sys.Date()
 
-  # dates max déjà en base pour les symboles demandés
-  existing_dates <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
-    dplyr::filter(symbol %in% !!symbols) |>
-    dplyr::group_by(symbol) |>
-    dplyr::summarise(last_date = max(date, na.rm = TRUE)) |>
-    dplyr::collect() |>
-    dplyr::mutate(last_date = as.Date(last_date))
+    # dates max déjà en base pour les symboles demandés
+    existing_dates <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
+        dplyr::filter(symbol %in% !!symbols) |>
+        dplyr::group_by(symbol) |>
+        dplyr::summarise(last_date = max(date, na.rm = TRUE)) |>
+        dplyr::collect() |>
+        dplyr::mutate(last_date = as.Date(last_date))
 
-  existing_symbols <- existing_dates$symbol
-  missing_symbols  <- setdiff(symbols, existing_symbols)
+    existing_symbols <- existing_dates$symbol
+    missing_symbols  <- setdiff(symbols, existing_symbols)
 
-  # --- Appel 1 : symboles déjà présents ---
-  if (length(existing_symbols) > 0) {
-    from_date <- min(existing_dates$last_date) + 1
+    # Appel 1 : symboles déjà présents
+    if (length(existing_symbols) > 0) {
+        from_date <- min(existing_dates$last_date) + 1
 
-    if (from_date <= to_date) {
-      message("Mise à jour de ", length(existing_symbols), " ticker(s) depuis le ", from_date, "...")
+        if (from_date <= to_date) {
+            message("Mise à jour de ", length(existing_symbols), " ticker(s) depuis le ", from_date, "...")
 
-      df_new <- tidyquant::tq_get(existing_symbols, from = from_date, to = to_date) |>
-        dplyr::select(-adjusted) %>%
-        filter(date != to_date)
+            df_new <- tidyquant::tq_get(existing_symbols, from = from_date, to = to_date) |>
+                dplyr::select(-adjusted) |>
+                dplyr::filter(date != to_date)
 
-      df_existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
-        dplyr::filter(symbol %in% !!existing_symbols, date >= !!from_date) |>
-        dplyr::select(symbol, date) |>
-        dplyr::collect()
+            df_existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "stockprice")) |>
+                dplyr::filter(symbol %in% !!existing_symbols, date >= !!from_date) |>
+                dplyr::select(symbol, date) |>
+                dplyr::collect()
 
-      df_to_add <- dplyr::anti_join(df_new, df_existing_keys, by = c("symbol", "date"))
+            df_to_add <- dplyr::anti_join(df_new, df_existing_keys, by = c("symbol", "date"))
 
-      if (nrow(df_to_add) > 0) {
-        DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "stockprice"), df_to_add, append = TRUE)
-        message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les tickers existants.")
-      } else {
-        message("Rien à ajouter pour les tickers existants.")
-      }
-    } else {
-      message("Tickers existants déjà à jour.")
+            if (nrow(df_to_add) > 0) {
+                DBI::dbWriteTable(
+                    conn   = con,
+                    name   = DBI::Id(schema = "stocktools", table = "stockprice"),
+                    value  = df_to_add,
+                    append = TRUE
+                )
+                message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les tickers existants.")
+            } else {
+                message("Rien à ajouter pour les tickers existants.")
+            }
+        } else {
+            message("Tickers existants déjà à jour.")
+        }
     }
-  }
 
-  # --- Appel 2 : nouveaux symboles (post-split ou première fois) ---
-  if (length(missing_symbols) > 0) {
-    from_date_new <- Sys.Date() - lubridate::years(12)
-    message("Import complet pour ", length(missing_symbols), " nouveau(x) ticker(s) : ",
-            paste(missing_symbols, collapse = ", "))
+    # Appel 2 : nouveaux symboles (post-split ou première fois)
+    if (length(missing_symbols) > 0) {
+        from_date_new <- Sys.Date() - lubridate::years(12)
+        message("Import complet pour ", length(missing_symbols), " nouveau(x) ticker(s) : ",
+                paste(missing_symbols, collapse = ", "))
 
-    df_new <- tidyquant::tq_get(missing_symbols, from = from_date_new, to = to_date) |>
-      dplyr::select(-adjusted) %>%
-      filter(date != to_date)
+        df_new <- tidyquant::tq_get(missing_symbols, from = from_date_new, to = to_date) |>
+            dplyr::select(-adjusted) |>
+            dplyr::filter(date != to_date)
 
-    if (!is.null(df_new) && nrow(df_new) > 0) {
-      DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "stockprice"), df_new, append = TRUE)
-      message(nrow(df_new), " ligne(s) ajoutée(s) pour les nouveaux tickers.")
+        if (!is.null(df_new) && nrow(df_new) > 0) {
+            DBI::dbWriteTable(
+                conn   = con,
+                name   = DBI::Id(schema = "stocktools", table = "stockprice"),
+                value  = df_new,
+                append = TRUE
+            )
+            message(nrow(df_new), " ligne(s) ajoutée(s) pour les nouveaux tickers.")
+        }
     }
-  }
 
-  invisible(TRUE)
+    invisible(TRUE)
 }
 
 
@@ -125,95 +135,111 @@ update_stockprice <- function(con, symbols) {
 #' }
 update_dividendes <- function(con, symbols, key_fmp_api) {
 
-  to_date <- Sys.Date() - 1
+    to_date <- Sys.Date() - 1
 
-  # Tickers déjà présents vs absents de la table
-  existing_symbols <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
-    dplyr::filter(symbol %in% !!symbols) |>
-    dplyr::distinct(symbol) |>
-    dplyr::collect() |>
-    dplyr::pull(symbol)
-
-  missing_symbols <- setdiff(symbols, existing_symbols)
-
-  # Cas 1 : tickers existants → un seul appel calendrier depuis max(date)
-  if (length(existing_symbols) > 0) {
-
-    from_date <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
-      dplyr::filter(symbol %in% !!existing_symbols) |>
-      dplyr::summarise(max_date = max(date, na.rm = TRUE)) |>
-      dplyr::collect() |>
-      dplyr::pull(max_date) |>
-      as.Date()
-
-    message("Calendrier dividendes depuis le ", from_date, " pour ",
-            length(existing_symbols), " ticker(s)...")
-
-    df_cal <- fmp_dividends_calendar_get(from = from_date, to = to_date, key_fmp_api = key_fmp_api)
-
-    if (!is.null(df_cal) && nrow(df_cal) > 0) {
-      names(df_cal) <- tolower(names(df_cal))
-
-      df_cal <- df_cal |>
-        dplyr::mutate(date = as.Date(date)) |>
-        dplyr::filter(!is.na(date), symbol %in% existing_symbols)
-
-      # Anti-join contre toute la table pour ces symboles
-      existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
-        dplyr::filter(symbol %in% !!existing_symbols) |>
-        dplyr::select(symbol, date) |>
+    # Tickers déjà présents vs absents de la table
+    existing_symbols <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
+        dplyr::filter(symbol %in% !!symbols) |>
+        dplyr::distinct(symbol) |>
         dplyr::collect() |>
-        dplyr::mutate(date = as.Date(date))
+        dplyr::pull(symbol)
 
-      df_to_add <- dplyr::anti_join(df_cal, existing_keys, by = c("symbol", "date"))
+    missing_symbols <- setdiff(symbols, existing_symbols)
 
-      if (nrow(df_to_add) > 0) {
-        DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "dividendes"), df_to_add, append = TRUE)
-        message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les tickers existants.")
-      } else {
-        message("Aucun nouveau dividende pour les tickers existants.")
-      }
+    # Cas 1 : tickers existants → un seul appel calendrier depuis max(date)
+    if (length(existing_symbols) > 0) {
+
+        from_date <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
+            dplyr::filter(symbol %in% !!existing_symbols) |>
+            dplyr::summarise(max_date = max(date, na.rm = TRUE)) |>
+            dplyr::collect() |>
+            dplyr::pull(max_date) |>
+            as.Date()
+
+        message("Calendrier dividendes depuis le ", from_date, " pour ",
+                length(existing_symbols), " ticker(s)...")
+
+        df_cal <- fmp_dividends_calendar_get(
+            from        = from_date,
+            to          = to_date,
+            key_fmp_api = key_fmp_api
+        )
+
+        if (!is.null(df_cal) && nrow(df_cal) > 0) {
+            names(df_cal) <- tolower(names(df_cal))
+
+            df_cal <- df_cal |>
+                dplyr::mutate(date = as.Date(date)) |>
+                dplyr::filter(!is.na(date), symbol %in% existing_symbols)
+
+            # Anti-join contre toute la table pour ces symboles
+            existing_keys <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
+                dplyr::filter(symbol %in% !!existing_symbols) |>
+                dplyr::select(symbol, date) |>
+                dplyr::collect() |>
+                dplyr::mutate(date = as.Date(date))
+
+            df_to_add <- dplyr::anti_join(df_cal, existing_keys, by = c("symbol", "date"))
+
+            if (nrow(df_to_add) > 0) {
+                DBI::dbWriteTable(
+                    conn   = con,
+                    name   = DBI::Id(schema = "stocktools", table = "dividendes"),
+                    value  = df_to_add,
+                    append = TRUE
+                )
+                message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les tickers existants.")
+            } else {
+                message("Aucun nouveau dividende pour les tickers existants.")
+            }
+        }
     }
-  }
 
-  # Cas 2 : tickers absents (nouveaux ou post-split) → 12 ans par ticker
-  if (length(missing_symbols) > 0) {
-    message("Import complet pour ", length(missing_symbols), " nouveau(x) ticker(s) : ",
-            paste(missing_symbols, collapse = ", "))
+    # Cas 2 : tickers absents (nouveaux ou post-split) → 12 ans par ticker
+    if (length(missing_symbols) > 0) {
+        message("Import complet pour ", length(missing_symbols), " nouveau(x) ticker(s) : ",
+                paste(missing_symbols, collapse = ", "))
 
-    results <- purrr::map(missing_symbols, \(sym) {
-      Sys.sleep(0.2)
-      df <- fmp_dividends_company_get(sym, key_fmp_api, limit = 500)
-      if (is.null(df) || nrow(df) == 0) return(NULL)
-      names(df) <- tolower(names(df))
-      df |> dplyr::mutate(date = as.Date(date)) |> dplyr::filter(!is.na(date))
-    })
+        results <- purrr::map(missing_symbols, \(sym) {
+            Sys.sleep(0.2)
+            df <- fmp_dividends_company_get(sym, key_fmp_api, limit = 500)
+            if (is.null(df) || nrow(df) == 0) return(NULL)
+            names(df) <- tolower(names(df))
+            df |>
+                dplyr::mutate(date = as.Date(date)) |>
+                dplyr::filter(!is.na(date))
+        })
 
-    df_new <- dplyr::bind_rows(results)
+        df_new <- dplyr::bind_rows(results)
 
-    if (nrow(df_new) > 0) {
+        if (nrow(df_new) > 0) {
 
-      # Anti-join pour éviter les doublons (ex: script relancé à mi-chemin)
-      existing_keys_new <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
-        dplyr::filter(symbol %in% !!missing_symbols) |>
-        dplyr::select(symbol, date) |>
-        dplyr::collect() |>
-        dplyr::mutate(date = as.Date(date))
+            # Anti-join pour éviter les doublons (ex: script relancé à mi-chemin)
+            existing_keys_new <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
+                dplyr::filter(symbol %in% !!missing_symbols) |>
+                dplyr::select(symbol, date) |>
+                dplyr::collect() |>
+                dplyr::mutate(date = as.Date(date))
 
-      df_to_add <- dplyr::anti_join(df_new, existing_keys_new, by = c("symbol", "date"))
+            df_to_add <- dplyr::anti_join(df_new, existing_keys_new, by = c("symbol", "date"))
 
-      if (nrow(df_to_add) > 0) {
-        DBI::dbWriteTable(con, DBI::Id(schema = "stocktools", table = "dividendes"), df_to_add, append = TRUE)
-        message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les nouveaux tickers.")
-      } else {
-        message("Aucun dividende à ajouter pour les nouveaux tickers.")
-      }
-    } else {
-      message("Aucun dividende trouvé pour les nouveaux tickers.")
+            if (nrow(df_to_add) > 0) {
+                DBI::dbWriteTable(
+                    conn   = con,
+                    name   = DBI::Id(schema = "stocktools", table = "dividendes"),
+                    value  = df_to_add,
+                    append = TRUE
+                )
+                message(nrow(df_to_add), " ligne(s) ajoutée(s) pour les nouveaux tickers.")
+            } else {
+                message("Aucun dividende à ajouter pour les nouveaux tickers.")
+            }
+        } else {
+            message("Aucun dividende trouvé pour les nouveaux tickers.")
+        }
     }
-  }
 
-  invisible(TRUE)
+    invisible(TRUE)
 }
 
 
@@ -241,25 +267,25 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
 #' }
 fmp_dividends_company_get <- function(symbol, key_fmp_api, limit = 100) {
 
-  url <- paste0(
-    "https://financialmodelingprep.com/stable/dividends",
-    "?symbol=", symbol,
-    "&limit=", limit,
-    "&apikey=", key_fmp_api
-  )
+    url <- paste0(
+        "https://financialmodelingprep.com/stable/dividends",
+        "?symbol=", symbol,
+        "&limit=", limit,
+        "&apikey=", key_fmp_api
+    )
 
-  resp <- httr::GET(url)
+    resp <- httr::GET(url)
 
-  if (httr::status_code(resp) != 200) {
-    warning("Erreur FMP pour ", symbol, " : HTTP ", httr::status_code(resp))
-    return(NULL)
-  }
+    if (httr::status_code(resp) != 200) {
+        warning("Erreur FMP pour ", symbol, " : HTTP ", httr::status_code(resp))
+        return(NULL)
+    }
 
-  data <- httr::content(resp, as = "parsed", simplifyVector = TRUE)
+    data <- httr::content(resp, as = "parsed", simplifyVector = TRUE)
 
-  if (is.null(data) || length(data) == 0) return(NULL)
+    if (is.null(data) || length(data) == 0) return(NULL)
 
-  dplyr::bind_rows(data) |> tibble::as_tibble()
+    dplyr::bind_rows(data) |> tibble::as_tibble()
 }
 
 
@@ -287,23 +313,23 @@ fmp_dividends_company_get <- function(symbol, key_fmp_api, limit = 100) {
 #' }
 fmp_dividends_calendar_get <- function(from, to, key_fmp_api) {
 
-  url <- paste0(
-    "https://financialmodelingprep.com/stable/dividends-calendar",
-    "?from=", format(as.Date(from), "%Y-%m-%d"),
-    "&to=",   format(as.Date(to),   "%Y-%m-%d"),
-    "&apikey=", key_fmp_api
-  )
+    url <- paste0(
+        "https://financialmodelingprep.com/stable/dividends-calendar",
+        "?from=", format(as.Date(from), "%Y-%m-%d"),
+        "&to=",   format(as.Date(to),   "%Y-%m-%d"),
+        "&apikey=", key_fmp_api
+    )
 
-  resp <- httr::GET(url)
+    resp <- httr::GET(url)
 
-  if (httr::status_code(resp) != 200) {
-    warning("Erreur FMP calendrier dividendes : HTTP ", httr::status_code(resp))
-    return(NULL)
-  }
+    if (httr::status_code(resp) != 200) {
+        warning("Erreur FMP calendrier dividendes : HTTP ", httr::status_code(resp))
+        return(NULL)
+    }
 
-  data <- httr::content(resp, as = "parsed", simplifyVector = TRUE)
+    data <- httr::content(resp, as = "parsed", simplifyVector = TRUE)
 
-  if (is.null(data) || length(data) == 0) return(NULL)
+    if (is.null(data) || length(data) == 0) return(NULL)
 
-  dplyr::bind_rows(data) |> tibble::as_tibble()
+    dplyr::bind_rows(data) |> tibble::as_tibble()
 }

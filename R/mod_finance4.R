@@ -1,19 +1,17 @@
-# =============================================================================
-# mod_finance4.R — Module Shiny : analyse boursière S&P 500 (version 4)
+﻿# mod_finance4.R â€” Module Shiny : analyse boursiÃ¨re S&P 500 (version 4)
 #
-# Module autonome (helpers intégrés, plus de dépendance vers mod_finance3.R).
+# Module autonome (helpers intÃ©grÃ©s, plus de dÃ©pendance vers mod_finance3.R).
 #
-# Sources de données : quality_build, dividendes_build,
+# Sources de donnÃ©es : quality_build, dividendes_build,
 #   cagr_stmts_build, cagr_price_build, valuation_build (graphique)
 #
-# Fonctions exportées :
-#   mod_finance4_ui1(id)         — nav_panel "Filtres"
-#   mod_finance4_ui2(id)         — nav_panel "Détail compagnie"
-#   mod_finance4_ui(id)          — navset_bar wrapper
-#   mod_finance4_server(id, con) — logique serveur
-# =============================================================================
+# Fonctions exportÃ©es :
+#   mod_finance4_ui1(id)         â€” nav_panel "Filtres"
+#   mod_finance4_ui2(id)         â€” nav_panel "DÃ©tail compagnie"
+#   mod_finance4_ui(id)          â€” navset_bar wrapper
+#   mod_finance4_server(id, con) â€” logique serveur
 
-# ── Helpers — tableaux qualité ────────────────────────────────────────────────
+# â”€â”€ Helpers â€” tableaux qualitÃ© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 .ligne_qualite <- function(label, valeur, secteur, signal) {
   cfg <- list(
@@ -43,23 +41,23 @@
   )
 }
 
-# ── Helpers — filtres ─────────────────────────────────────────────────────────
+# â”€â”€ Helpers â€” filtres â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# Définitions des filtres
-# fmt         : "pct" → slider 0-N, filtre /100 | "dec" → décimal | "num" → brut
-# seuil       : "min" → cie >= valeur | "max" → cie <= valeur
+# DÃ©finitions des filtres
+# fmt         : "pct" â†’ slider 0-N, filtre /100 | "dec" â†’ dÃ©cimal | "num" â†’ brut
+# seuil       : "min" â†’ cie >= valeur | "max" â†’ cie <= valeur
 # type        : absent = slider | "binary" = checkbox (pas de slider)
-# no_negative : TRUE → exclut aussi les valeurs négatives (filtre "max" uniquement)
-# div_sub     : TRUE → filtre dividende conditionnel (masqué si "avec_div" non coché)
-# default     : TRUE = coché au démarrage
+# no_negative : TRUE â†’ exclut aussi les valeurs nÃ©gatives (filtre "max" uniquement)
+# div_sub     : TRUE â†’ filtre dividende conditionnel (masquÃ© si "avec_div" non cochÃ©)
+# default     : TRUE = cochÃ© au dÃ©marrage
 .filter_defs2 <- list(
-  list(id="roa",      label="ROA",              cat="Rentabilité", col="roa",                  min=0, max=60,   step=1,    fmt="pct", seuil="min", default=TRUE),
-  list(id="roe",      label="ROE",              cat="Rentabilité", col="roe",                  min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
-  list(id="roa_moy5", label="ROA moy. 5a",      cat="Rentabilité", col="roa_moy5",             min=0, max=30,   step=1,    fmt="pct", seuil="min", default=FALSE),
-  list(id="roe_moy5", label="ROE moy. 5a",      cat="Rentabilité", col="roe_moy5",             min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
-  list(id="m_brut",   label="Marge brute",      cat="Rentabilité", col="m_brut",               min=0, max=100,  step=1,    fmt="pct", seuil="min", default=FALSE),
-  list(id="m_ebitda", label="Marge EBITDA",     cat="Rentabilité", col="m_ebitda",             min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
-  list(id="m_net",    label="Marge nette",      cat="Rentabilité", col="m_net",                min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="roa",      label="ROA",              cat="RentabilitÃ©", col="roa",                  min=0, max=60,   step=1,    fmt="pct", seuil="min", default=TRUE),
+  list(id="roe",      label="ROE",              cat="RentabilitÃ©", col="roe",                  min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="roa_moy5", label="ROA moy. 5a",      cat="RentabilitÃ©", col="roa_moy5",             min=0, max=30,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="roe_moy5", label="ROE moy. 5a",      cat="RentabilitÃ©", col="roe_moy5",             min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="m_brut",   label="Marge brute",      cat="RentabilitÃ©", col="m_brut",               min=0, max=100,  step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="m_ebitda", label="Marge EBITDA",     cat="RentabilitÃ©", col="m_ebitda",             min=0, max=60,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="m_net",    label="Marge nette",      cat="RentabilitÃ©", col="m_net",                min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
   list(id="cagr_rev", label="Sales Growth 3a",  cat="Croissance",  col="cagr_3_is_revenue",    min=0, max=50,   step=1,    fmt="pct", seuil="min", default=TRUE),
   list(id="cagr_ebd", label="EBITDA Growth 3a", cat="Croissance",  col="cagr_3_is_ebitda",     min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
   list(id="cagr_eps", label="EPS Growth 3a",    cat="Croissance",  col="cagr_3_is_epsdiluted", min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
@@ -67,19 +65,19 @@
   list(id="br_ebd",   label="BR EBITDA",        cat="Buy Ratio",   col="r_ebd",  min=0, max=1, step=0.05, fmt="dec", seuil="max", default=FALSE, val=0.1),
   list(id="br_pe",    label="BR EPS",           cat="Buy Ratio",   col="r_pe",   min=0, max=1, step=0.05, fmt="dec", seuil="max", default=FALSE, val=0.1),
   list(id="br_ped",   label="BR EPS dil.",      cat="Buy Ratio",   col="r_ped",  min=0, max=1, step=0.05, fmt="dec", seuil="max", default=FALSE, val=0.1),
-  list(id="r_courant",label="Ratio courant",    cat="Solidité",    col="ratio_courant",        min=0, max=5,    step=0.1,  fmt="dec", seuil="min", default=FALSE),
-  list(id="fcf_rev",  label="FCF / Revenus",    cat="Solidité",    col="fcf_rev",              min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
-  list(id="pppi",     label="PPPI max.",         cat="Solidité",    col="pppi",                 min=0, max=100,  step=5,    fmt="pct", seuil="max", default=FALSE, val=50),
-  list(id="mktcap",   label="Mkt Cap ($M)",     cat="Marché",      col="mktcap_m",             min=0, max=3000, step=50,   fmt="num", seuil="min", default=FALSE),
-  # Filtres dividendes conditionnels (div_sub=TRUE) — visibles uniquement si "avec_div" coché
+  list(id="r_courant",label="Ratio courant",    cat="SoliditÃ©",    col="ratio_courant",        min=0, max=5,    step=0.1,  fmt="dec", seuil="min", default=FALSE),
+  list(id="fcf_rev",  label="FCF / Revenus",    cat="SoliditÃ©",    col="fcf_rev",              min=0, max=50,   step=1,    fmt="pct", seuil="min", default=FALSE),
+  list(id="pppi",     label="PPPI max.",         cat="SoliditÃ©",    col="pppi",                 min=0, max=100,  step=5,    fmt="pct", seuil="max", default=FALSE, val=50),
+  list(id="mktcap",   label="Mkt Cap ($M)",     cat="MarchÃ©",      col="mktcap_m",             min=0, max=3000, step=50,   fmt="num", seuil="min", default=FALSE),
+  # Filtres dividendes conditionnels (div_sub=TRUE) â€” visibles uniquement si "avec_div" cochÃ©
   list(id="yield",    label="Yield min.",       cat="Dividendes",  col="yield",      min=0, max=10,  step=0.5, fmt="pct", seuil="min", default=FALSE, val=2,  div_sub=TRUE),
   list(id="cagr_div5",label="CAGR Div. 5a",    cat="Dividendes",  col="cagr_div_5a",min=0, max=20,  step=1,   fmt="pct", seuil="min", default=FALSE, val=3,  div_sub=TRUE),
   list(id="fcf_pay",  label="FCF Payout max.", cat="Dividendes",   col="fcf_payout", min=0, max=100, step=5,   fmt="pct", seuil="max", default=FALSE, val=80, div_sub=TRUE, no_negative=TRUE)
 )
 
-# Préréglages de filtres
+# PrÃ©rÃ©glages de filtres
 .presets_defs3 <- list(
-  "Croissance qualité" = list(
+  "Croissance qualitÃ©" = list(
     actifs  = c("roa", "m_ebitda", "cagr_rev", "cagr_eps", "br_pts"),
     valeurs = list(roa = 10, m_ebitda = 15, cagr_rev = 8, cagr_eps = 8, br_pts = 0.5)
   ),
@@ -87,13 +85,13 @@
     actifs  = c("roa", "fcf_rev", "r_courant", "br_pts", "avec_div", "yield"),
     valeurs = list(roa = 5, fcf_rev = 8, r_courant = 1.2, br_pts = 0.7, yield = 2)
   ),
-  "Valeur défensive" = list(
+  "Valeur dÃ©fensive" = list(
     actifs  = c("m_brut", "m_net", "r_courant", "br_pts", "br_ebd"),
     valeurs = list(m_brut = 30, m_net = 8, r_courant = 1.5, br_pts = 0.5, br_ebd = 0.5)
   )
 )
 
-# Checkboxes groupées par catégorie (sidebar Sélection) — exclut les div_sub
+# Checkboxes groupÃ©es par catÃ©gorie (sidebar SÃ©lection) â€” exclut les div_sub
 .build_checkbox_ui2 <- function(ns, defs) {
   defs_static <- Filter(function(d) !isTRUE(d$div_sub), defs)
   cats <- unique(sapply(defs_static, `[[`, "cat"))
@@ -116,13 +114,13 @@
 }
 
 # Sliders/checkboxes actifs (sidebar Filtres actifs)
-# valeurs_courantes : liste nommée par id → valeur actuelle de l'input
-#   → permet de conserver la valeur quand on ajoute/retire un filtre
+# valeurs_courantes : liste nommÃ©e par id â†’ valeur actuelle de l'input
+#   â†’ permet de conserver la valeur quand on ajoute/retire un filtre
 .build_sliders_actifs2 <- function(ns, defs, actifs, valeurs_courantes = list()) {
   if (length(actifs) == 0) {
     return(shiny::tags$p(
       class = "text-muted small fst-italic",
-      "Cochez des filtres dans la sélection."
+      "Cochez des filtres dans la sÃ©lection."
     ))
   }
   defs_actifs <- Filter(function(d) d$id %in% actifs, defs)
@@ -135,8 +133,8 @@
       lapply(defs_cat, function(d) {
         cur_val <- valeurs_courantes[[d$id]]
 
-        # ── Filtre slider ────────────────────────────────────────────────────
-        # Priorité : valeur courante > val définie > min/max selon seuil
+        # â”€â”€ Filtre slider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # PrioritÃ© : valeur courante > val dÃ©finie > min/max selon seuil
         val_init <- if (!is.null(cur_val)) cur_val
                     else if (!is.null(d$val)) d$val
                     else if (d$seuil == "min") d$min
@@ -215,7 +213,7 @@
   shiny::tags$td(class = "text-end text-muted small", .fmt_pct2(val))
 }
 
-# Mapping métrique → colonnes valuation_build
+# Mapping mÃ©trique â†’ colonnes valuation_build
 .metric_val_cols3 <- list(
   "P/S"      = list(buy = "buy_p_to_s",      sell = "sell_p_to_s",      caution = "caution_p_to_s"),
   "P/EBITDA" = list(buy = "buy_p_to_ebitda", sell = "sell_p_to_ebitda", caution = "caution_p_to_ebitda"),
@@ -223,9 +221,9 @@
   "P/E dil." = list(buy = "buy_pe_dil",       sell = "sell_pe_dil",      caution = "caution_pe_dil")
 )
 
-# ── UI 1 — Onglet Filtres ────────────────────────────────────────────────────
+# â”€â”€ UI 1 â€” Onglet Filtres â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' Onglet Filtres du module analyse boursière v4
+#' Onglet Filtres du module analyse boursiÃ¨re v4
 #'
 #' @param id Identifiant du module
 #' @return `bslib::nav_panel`
@@ -239,7 +237,7 @@ mod_finance4_ui1 <- function(id) {
 
   bslib::nav_panel(
     title = "Filtres",
-    # Masquer min/max affichés au-dessus des poignées sliderInput
+    # Masquer min/max affichÃ©s au-dessus des poignÃ©es sliderInput
     shiny::tags$style(shiny::HTML(
       ".irs-min, .irs-max { display: none !important; }"
     )),
@@ -248,9 +246,9 @@ mod_finance4_ui1 <- function(id) {
     bslib::layout_sidebar(
       fill = TRUE,
 
-      # ── Sidebar Sélection ───────────────────────────────────────────────
+      # â”€â”€ Sidebar SÃ©lection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       sidebar = bslib::sidebar(
-        title = "Sélection",
+        title = "SÃ©lection",
         width = 230,
 
         shiny::selectInput(ns("preset"), "Pr\u00e9r\u00e9glage :",
@@ -264,7 +262,7 @@ mod_finance4_ui1 <- function(id) {
         # Filtres statiques (non-dividendes)
         .build_checkbox_ui2(ns, .filter_defs2),
 
-        # Filtre dividendes — conditionnel
+        # Filtre dividendes â€” conditionnel
         shiny::tags$hr(class = "my-1"),
         shiny::checkboxInput(ns("avec_div"), "Avec dividende", value = FALSE),
         shiny::uiOutput(ns("div_checkbox_ui"))
@@ -273,7 +271,7 @@ mod_finance4_ui1 <- function(id) {
       bslib::layout_sidebar(
         fill = TRUE,
 
-        # ── Sidebar Filtres actifs ────────────────────────────────────────
+        # â”€â”€ Sidebar Filtres actifs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         sidebar = bslib::sidebar(
           title = "Filtres actifs",
           open  = "always",
@@ -281,7 +279,7 @@ mod_finance4_ui1 <- function(id) {
           shiny::uiOutput(ns("sliders_dynamiques"))
         ),
 
-        # ── Tableau compagnies ────────────────────────────────────────────
+        # â”€â”€ Tableau compagnies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         bslib::card(
           fill = TRUE,
           bslib::card_header(
@@ -306,9 +304,9 @@ mod_finance4_ui1 <- function(id) {
   )
 }
 
-# ── UI 2 — Onglet Détail compagnie ───────────────────────────────────────────
+# â”€â”€ UI 2 â€” Onglet DÃ©tail compagnie â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' Onglet Détail compagnie du module analyse boursière v4
+#' Onglet DÃ©tail compagnie du module analyse boursiÃ¨re v4
 #'
 #' @param id Identifiant du module
 #' @return `bslib::nav_panel`
@@ -320,11 +318,11 @@ mod_finance4_ui2 <- function(id) {
   ns <- shiny::NS(id)
 
   bslib::nav_panel(
-    title    = "Détail compagnie",
+    title    = "DÃ©tail compagnie",
     fillable = FALSE,
     icon     = bsicons::bs_icon("building"),
 
-    # ── Sélecteur + barre d'info ──────────────────────────────────────────
+    # â”€â”€ SÃ©lecteur + barre d'info â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     shiny::tags$div(
       class = "d-flex align-items-center gap-3 mb-3 flex-wrap",
       shiny::tags$div(style = "min-width:300px; flex:1;",
@@ -336,12 +334,12 @@ mod_finance4_ui2 <- function(id) {
     bslib::layout_columns(
       col_widths = c(4, 5, 3),
 
-      # ── Colonne gauche — Qualité + Graphique ────────────────────────────
+      # â”€â”€ Colonne gauche â€” QualitÃ© + Graphique â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       shiny::tagList(
         bslib::card(
           bslib::card_header(
             class = "d-flex justify-content-between align-items-center",
-            shiny::tags$b("Qualité \u2014 Rentabilit\u00e9, Marges & Valorisation"),
+            shiny::tags$b("QualitÃ© \u2014 Rentabilit\u00e9, Marges & Valorisation"),
             shiny::tags$small(class = "text-muted",
                               shiny::textOutput(ns("secteur_detail4"), inline = TRUE))
           ),
@@ -364,7 +362,7 @@ mod_finance4_ui2 <- function(id) {
         )
       ),
 
-      # ── Colonne centrale — Croissance ────────────────────────────────────
+      # â”€â”€ Colonne centrale â€” Croissance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       shiny::tagList(
         bslib::card(
           fill = FALSE,
@@ -374,7 +372,7 @@ mod_finance4_ui2 <- function(id) {
         )
       ),
 
-      # ── Colonne droite — Dividendes + Structure financière ───────────────
+      # â”€â”€ Colonne droite â€” Dividendes + Structure financiÃ¨re â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       shiny::tagList(
         bslib::card(
           bslib::card_header(shiny::tags$b("Dividendes")),
@@ -391,9 +389,9 @@ mod_finance4_ui2 <- function(id) {
   )
 }
 
-# ── UI complète ───────────────────────────────────────────────────────────────
+# â”€â”€ UI complÃ¨te â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' UI complète du module analyse boursière v4
+#' UI complÃ¨te du module analyse boursiÃ¨re v4
 #'
 #' @param id Identifiant du module
 #' @return `bslib::navset_bar`
@@ -408,9 +406,9 @@ mod_finance4_ui <- function(id) {
   )
 }
 
-# ── Server ────────────────────────────────────────────────────────────────────
+# â”€â”€ Server â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-#' Serveur du module analyse boursière v4
+#' Serveur du module analyse boursiÃ¨re v4
 #'
 #' @param id  Identifiant du module
 #' @param con Connexion DBI active (PostgreSQL)
@@ -431,9 +429,7 @@ mod_finance4_ui <- function(id) {
 mod_finance4_server <- function(id, con) {
   shiny::moduleServer(id, function(input, output, session) {
 
-    # =========================================================================
-    # Chargement depuis les tables pré-calculées
-    # =========================================================================
+    # Chargement depuis les tables prÃ©-calculÃ©es
 
     message("  [1/5] quality_build...")
     quality <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "quality_build")) |>
@@ -478,7 +474,7 @@ mod_finance4_server <- function(id, con) {
       dplyr::left_join(cagr_stmts, by = "symbol") |>
       dplyr::left_join(cagr_price,  by = "symbol")
 
-    # ── Médianes sectorielles ─────────────────────────────────────────────
+    # â”€â”€ MÃ©dianes sectorielles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     cols_med4 <- c("roa", "roe", "roa_moy5", "roe_moy5",
                    "m_brut", "m_ebitda", "m_net", "fcf_rev",
                    "ratio_courant", "d_actif", "couv_interet",
@@ -512,15 +508,13 @@ mod_finance4_server <- function(id, con) {
         .groups = "drop"
       )
 
-    # =========================================================================
-    # Préréglages
-    # =========================================================================
+    # PrÃ©rÃ©glages
 
     shiny::observeEvent(input$preset, {
       shiny::req(nchar(input$preset) > 0)
       p <- .presets_defs3[[input$preset]]
 
-      # ── Checkboxes des catégories statiques ──────────────────────────────
+      # â”€â”€ Checkboxes des catÃ©gories statiques â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       defs_static <- Filter(function(d) !isTRUE(d$div_sub), .filter_defs2)
       cats_static <- unique(sapply(defs_static, `[[`, "cat"))
       for (cat in cats_static) {
@@ -531,11 +525,11 @@ mod_finance4_server <- function(id, con) {
                                         selected = intersect(p$actifs, ids_cat))
       }
 
-      # ── Checkbox avec_div ────────────────────────────────────────────────
+      # â”€â”€ Checkbox avec_div â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       shiny::updateCheckboxInput(session, "avec_div",
                                   value = "avec_div" %in% p$actifs)
 
-      # ── Valeurs sliders + filtres dividendes (après flush) ───────────────
+      # â”€â”€ Valeurs sliders + filtres dividendes (aprÃ¨s flush) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       session$onFlushed(once = TRUE, function() {
         # Filtres dividendes conditionnels
         div_ids <- sapply(Filter(function(d) isTRUE(d$div_sub), .filter_defs2), `[[`, "id")
@@ -549,9 +543,7 @@ mod_finance4_server <- function(id, con) {
       })
     }, ignoreInit = TRUE)
 
-    # =========================================================================
     # Filtre secteur (timing-safe)
-    # =========================================================================
 
     secteurs <- c("Tous", sort(unique(stats::na.omit(base_data4$sector))))
     shiny::observeEvent(input$secteur_f, {
@@ -560,11 +552,9 @@ mod_finance4_server <- function(id, con) {
                                selected = "Tous")
     }, once = TRUE, ignoreNULL = TRUE, ignoreInit = FALSE)
 
-    # =========================================================================
     # Filtres actifs
-    # =========================================================================
 
-    # Checkboxes conditionnelles dividendes (dans sidebar Sélection)
+    # Checkboxes conditionnelles dividendes (dans sidebar SÃ©lection)
     output$div_checkbox_ui <- shiny::renderUI({
       if (!isTRUE(input$avec_div)) return(NULL)
       defs_div <- Filter(function(d) isTRUE(d$div_sub), .filter_defs2)
@@ -597,9 +587,9 @@ mod_finance4_server <- function(id, con) {
       c(base_actifs, div_actifs)
     })
 
-    # Sliders dynamiques — valeurs courantes conservées lors du re-render
-    # isolate() : évite que la lecture des valeurs slider ne crée une dépendance
-    # réactive → empêche la boucle infinie lors de l'application d'un préréglage
+    # Sliders dynamiques â€” valeurs courantes conservÃ©es lors du re-render
+    # isolate() : Ã©vite que la lecture des valeurs slider ne crÃ©e une dÃ©pendance
+    # rÃ©active â†’ empÃªche la boucle infinie lors de l'application d'un prÃ©rÃ©glage
     output$sliders_dynamiques <- shiny::renderUI({
       actifs <- filtres_actifs4()
       valeurs_courantes <- shiny::isolate(
@@ -612,9 +602,7 @@ mod_finance4_server <- function(id, con) {
                              actifs = actifs, valeurs_courantes = valeurs_courantes)
     })
 
-    # =========================================================================
-    # Filtrage réactif
-    # =========================================================================
+    # Filtrage rÃ©actif
 
     df_filtres4 <- shiny::reactive({
       df     <- base_data4
@@ -641,7 +629,7 @@ mod_finance4_server <- function(id, con) {
         if (d$seuil == "min") {
           df <- df[!is.na(col_vals) & col_vals >= seuil_val, ]
         } else if (isTRUE(d$no_negative)) {
-          # Filtre "max" avec exclusion des valeurs négatives (ex: FCF Payout)
+          # Filtre "max" avec exclusion des valeurs nÃ©gatives (ex: FCF Payout)
           df <- df[!is.na(col_vals) & col_vals >= 0 & col_vals <= seuil_val, ]
         } else {
           df <- df[is.na(col_vals) | col_vals <= seuil_val, ]
@@ -650,9 +638,7 @@ mod_finance4_server <- function(id, con) {
       df
     })
 
-    # =========================================================================
-    # Onglet Filtres — outputs
-    # =========================================================================
+    # Onglet Filtres â€” outputs
 
     output$n_filtrees4 <- shiny::renderText({
       paste0(nrow(df_filtres4()), " compagnies")
@@ -703,7 +689,7 @@ mod_finance4_server <- function(id, con) {
       )
     })
 
-    # Navigation vers Détail compagnie au clic sur une ligne du tableau
+    # Navigation vers DÃ©tail compagnie au clic sur une ligne du tableau
     shiny::observeEvent(input$clicked_symbol, {
       shiny::req(nchar(input$clicked_symbol) > 0)
       shiny::updateSelectInput(session, "symbol",
@@ -711,7 +697,7 @@ mod_finance4_server <- function(id, con) {
       bslib::nav_select("main_nav", "D\u00e9tail compagnie", session = session)
     })
 
-    # Sync sélecteur symbole
+    # Sync sÃ©lecteur symbole
     shiny::observe({
       df <- df_filtres4() |> dplyr::arrange(symbol)
       if (nrow(df) == 0) {
@@ -726,16 +712,14 @@ mod_finance4_server <- function(id, con) {
                                selected = choices[1])
     })
 
-    # =========================================================================
-    # Données réactives pour le symbole sélectionné
-    # =========================================================================
+    # DonnÃ©es rÃ©actives pour le symbole sÃ©lectionnÃ©
 
     donnees_symbol4 <- shiny::reactive({
       shiny::req(input$symbol, nchar(input$symbol) > 0)
       base_data4 |> dplyr::filter(symbol == input$symbol)
     })
 
-    # Historique valorisation pour le graphique (chargé à la demande)
+    # Historique valorisation pour le graphique (chargÃ© Ã  la demande)
     val_hist4 <- shiny::reactive({
       shiny::req(input$symbol, nchar(input$symbol) > 0)
       dplyr::tbl(con, dbplyr::in_schema("stocktools", "valuation_build")) |>
@@ -751,16 +735,14 @@ mod_finance4_server <- function(id, con) {
         dplyr::filter(date >= Sys.Date() - lubridate::years(n_years))
     })
 
-    # Dernière ligne valuation (pour les profits estimés)
+    # DerniÃ¨re ligne valuation (pour les profits estimÃ©s)
     val_latest4 <- shiny::reactive({
       df <- val_hist4()
       if (nrow(df) == 0) return(NULL)
       df |> dplyr::arrange(date) |> dplyr::slice_tail(n = 1)
     })
 
-    # =========================================================================
     # Barre d'info compagnie
-    # =========================================================================
 
     output$info_bar4 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol4()) > 0)
@@ -790,9 +772,7 @@ mod_finance4_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
-    # Tableau Rentabilité & Marges
-    # =========================================================================
+    # Tableau RentabilitÃ© & Marges
 
     output$secteur_detail4 <- shiny::renderText({
       shiny::req(nrow(donnees_symbol4()) > 0)
@@ -839,9 +819,7 @@ mod_finance4_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Graphique bandes buy/sell
-    # =========================================================================
 
     output$graph_buy4 <- shiny::renderPlot({
       df  <- val_hist4_filtered()
@@ -880,9 +858,7 @@ mod_finance4_server <- function(id, con) {
                        plot.margin      = ggplot2::margin(4, 4, 4, 4))
     }, bg = "transparent")
 
-    # =========================================================================
-    # Indicateurs buy signal — 4 boîtes cliquables + Gordon
-    # =========================================================================
+    # Indicateurs buy signal â€” 4 boÃ®tes cliquables + Gordon
 
     output$buy_signal_ui4 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol4()) > 0)
@@ -954,9 +930,7 @@ mod_finance4_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
-    # Tableau Croissance — Prix / Fondamentaux / Dividendes
-    # =========================================================================
+    # Tableau Croissance â€” Prix / Fondamentaux / Dividendes
 
     output$tableau_croissance4 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol4()) > 0)
@@ -972,7 +946,7 @@ mod_finance4_server <- function(id, con) {
 
       px1 <- d$cagr_1y; px3 <- d$cagr_3y; px5 <- d$cagr_5y; px10 <- NA_real_
 
-      # Ligne fondamentaux : colorée vs prix CAGR de même période
+      # Ligne fondamentaux : colorÃ©e vs prix CAGR de mÃªme pÃ©riode
       ligne_cagr <- function(label, c1, s1, i1, c3, c5, c10) {
         shiny::tags$tr(
           shiny::tags$td(class = "small", label),
@@ -985,7 +959,7 @@ mod_finance4_server <- function(id, con) {
         )
       }
 
-      # Ligne prix : affichée en gris (valeur de référence, pas de coloration)
+      # Ligne prix : affichÃ©e en gris (valeur de rÃ©fÃ©rence, pas de coloration)
       ligne_prix <- function(label, c1, c3, c5, c10) {
         shiny::tags$tr(
           class = "table-light",
@@ -999,7 +973,7 @@ mod_finance4_server <- function(id, con) {
         )
       }
 
-      # Ligne dividendes : colorée vs prix CAGR (croissance div > prix = vert)
+      # Ligne dividendes : colorÃ©e vs prix CAGR (croissance div > prix = vert)
       ligne_div <- function(label, c1, c3, c5, c10) {
         shiny::tags$tr(
           shiny::tags$td(class = "small", label),
@@ -1024,10 +998,10 @@ mod_finance4_server <- function(id, con) {
           shiny::tags$th(class = "text-end small", "10a")
         )),
         shiny::tags$tbody(
-          # ── Prix (référence) ───────────────────────────────────────────
+          # â”€â”€ Prix (rÃ©fÃ©rence) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           ligne_prix("Prix",
             d$cagr_1y, d$cagr_3y, d$cagr_5y, d$cagr_10y),
-          # ── Fondamentaux ───────────────────────────────────────────────
+          # â”€â”€ Fondamentaux â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           .section_qualite("Fondamentaux"),
           ligne_cagr("Sales Gr.",
             d$cagr_1_is_revenue,
@@ -1049,7 +1023,7 @@ mod_finance4_server <- function(id, con) {
             get_med(s_med, "cagr_1_cf_freecashflow"),
             get_med(i_med, "cagr_1_cf_freecashflow"),
             d$cagr_3_cf_freecashflow, d$cagr_5_cf_freecashflow, d$cagr_10_cf_freecashflow),
-          # ── Dividendes ─────────────────────────────────────────────────
+          # â”€â”€ Dividendes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
           .section_qualite("Dividendes"),
           ligne_div("Div. Gr.",
             d$cagr_div_1a, d$cagr_div_3a, d$cagr_div_5a, d$cagr_div_10a)
@@ -1057,9 +1031,7 @@ mod_finance4_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
     # Tableau Dividendes (depuis dividendes_build)
-    # =========================================================================
 
     output$tableau_dividendes4 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol4()) > 0)
@@ -1070,7 +1042,7 @@ mod_finance4_server <- function(id, con) {
       flag_irregular <- if (isTRUE(d$has_irregular))
         paste0("Oui (", format(d$last_irregular_date, "%Y-%m-%d"), ")") else "Non"
 
-      # FCF Payout : afficher valeur réelle même si négative (signal important)
+      # FCF Payout : afficher valeur rÃ©elle mÃªme si nÃ©gative (signal important)
       txt_fcf_pay <- if (is.na(d$fcf_payout)) "N/D"
                      else scales::percent(d$fcf_payout, accuracy = 0.1)
       txt_fcf_cov <- .fmt_x2(d$fcf_coverage)
@@ -1095,9 +1067,7 @@ mod_finance4_server <- function(id, con) {
       )
     })
 
-    # =========================================================================
-    # Tableau Structure financière
-    # =========================================================================
+    # Tableau Structure financiÃ¨re
 
     output$tableau_structure4 <- shiny::renderUI({
       shiny::req(nrow(donnees_symbol4()) > 0)
