@@ -9,3 +9,5 @@ inst/app/data/config_s3_access.rds
 inst/R_temp/
 inst/script_temp/
 CLAUDE.md
+.env
+.aider*

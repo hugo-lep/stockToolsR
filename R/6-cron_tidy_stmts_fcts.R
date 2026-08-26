@@ -61,14 +61,16 @@ tidy_stmts <- function(con,
         dplyr::arrange(date) |>
         sel_or_all(cols_gen = keep_cols_gen, cols_x = keep_cols_is) |>
         dplyr::mutate(dplyr::across(-dplyr::all_of(keep_cols_gen), as.numeric)) |>
-        dplyr::group_by(symbol) |>
-        dplyr::mutate(dplyr::across(
-            -dplyr::any_of(cols_no_roll_is),
-            ~ slider::slide_sum(., before = 3, complete = TRUE)
-        )) |>
-        dplyr::arrange(symbol, dplyr::desc(date)) |>
-        dplyr::slice(1:(dplyr::n() - 3)) |>
-        dplyr::ungroup()
+      dplyr::group_by(symbol) |>
+      dplyr::mutate(
+        dplyr::across(
+          -dplyr::any_of(cols_no_roll_is),
+          ~ slider::slide_sum(., before = 3, complete = TRUE)
+        )
+      ) |>
+      dplyr::arrange(symbol, dplyr::desc(date)) |>
+      dplyr::slice(-(1:min(3, dplyr::n()))) |>
+      dplyr::ungroup()
 
     # Annuels : chaque ligne représente déjà un FY complet
     is_fy <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "fy_income_stmts_orig")) |>
@@ -130,14 +132,16 @@ tidy_stmts <- function(con,
             -dplyr::all_of(keep_cols_gen),
             as.double
         )) |>
-        dplyr::group_by(symbol) |>
-        dplyr::mutate(dplyr::across(
-            -dplyr::all_of(setdiff(keep_cols_gen, "symbol")),
-            ~ slider::slide_sum(., before = 3, complete = TRUE)
-        )) |>
-        dplyr::arrange(symbol, dplyr::desc(date)) |>
-        dplyr::slice(1:(dplyr::n() - 3)) |>
-        dplyr::ungroup()
+      dplyr::group_by(symbol) |>
+      dplyr::mutate(
+        dplyr::across(
+          -dplyr::any_of(cols_no_roll_is),
+          ~ slider::slide_sum(., before = 3, complete = TRUE)
+        )
+      ) |>
+      dplyr::arrange(symbol, dplyr::desc(date)) |>
+      dplyr::slice(-(1:min(3, dplyr::n()))) |>
+      dplyr::ungroup()
 
     cashflow <- cf_qts |>
         dplyr::anti_join(cf_fy, by = c("date", "symbol")) |>

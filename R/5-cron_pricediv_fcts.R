@@ -149,14 +149,15 @@ update_dividendes <- function(con, symbols, key_fmp_api) {
     # Cas 1 : tickers existants → un seul appel calendrier depuis max(date)
     if (length(existing_symbols) > 0) {
 
-        from_date <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
-            dplyr::filter(symbol %in% !!existing_symbols) |>
-            dplyr::summarise(max_date = max(date, na.rm = TRUE)) |>
-            dplyr::collect() |>
-            dplyr::pull(max_date) |>
-            as.Date()
+      from_date <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "dividendes")) |>
+        dplyr::filter(symbol %in% !!existing_symbols) |>
+#        dplyr::filter(date < to_date) %>%
+        dplyr::summarise(max_date = max(date, na.rm = TRUE)) |>
+        dplyr::collect() |>
+        dplyr::pull(max_date) |>
+        as.Date()
 
-        message("Calendrier dividendes depuis le ", from_date, " pour ",
+      message("Calendrier dividendes depuis le ", from_date, " pour ",
                 length(existing_symbols), " ticker(s)...")
 
         df_cal <- fmp_dividends_calendar_get(
