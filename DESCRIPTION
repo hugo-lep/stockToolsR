@@ -37,6 +37,11 @@ Imports:
     tidyquant,
     tidyr,
     tidyselect
+Suggests:
+    here,
+    devtools,
+    BatchGetSymbols,
+    RPostgres
 RoxygenNote: 7.3.3
 URL: https://github.com/hugo-lep/stockToolsR
 BugReports: https://github.com/hugo-lep/stockToolsR/issues
