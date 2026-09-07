@@ -1,6 +1,36 @@
 # Roadmap stockToolsR
 
 Améliorations identifiées durant le développement, à traiter ultérieurement.
+Backlog : performance, robustesse, qualité des données, dette technique.
+
+---
+
+## Révision du cron — `inst/script2/` (priorité)
+
+Réécriture complète du pipeline actuel (`inst/script/`), un fichier à la fois, dans `inst/script2/`.
+Les scripts actuels restent intacts pendant la révision.
+
+### Fiabilité (décisions prises pour la nouvelle version)
+
+- [x] **Helper DRY** : une fonction `fmp_get()` dans `00_api.R` centralisant GET FMP + header clé + status 200 + retry + `Sys.sleep` + log. Remplace les ~10 appels dupliqués.
+- [x] **Clé API par header** (pas dans l'URL) pour éviter la fuite dans les logs.
+- [x] **Clé API via `Sys.getenv()`** — jamais en dur.
+- [x] **Erreurs non silencieuses** : logger le motif d'échec (statut HTTP) + retry avant abandon, au lieu de retourner `NULL` sans trace.
+- [x] **Transactions** pour les DELETE+INSERT non-atomiques — fait : `01_profiles` (force), `02_splits` (DELETE multi-tables), `04_statements` (écriture 6 tables).
+- [x] **TRUNCATE avant écriture sans transaction** dans les tables `_build` — corrigé : toutes les écritures `_build` sont maintenant transactionnelles (TRUNCATE + append dans `dbWithTransaction`), via les fonctions `v2` (`tidy_stmts2`, `valuation_stockprice2`, `cagr_stockprice2`, `cagr_stmts2`, `build_dividendes_build2`, `build_quality_build2`).
+- [x] **`bind_rows` sur listes `NULL`** (états financiers) — corrigé : `fmp_get` retourne NULL et `get_stmts_cie()` filtre les appels échoués avec `purrr::compact`.
+
+### Logging (consultable via l'app Shiny)
+
+- [x] **Table `cron_log` PostgreSQL** : résumé du run (une ligne par run : statut, nb_ok, nb_warn, nb_err, started_at, finished_at) — vérification en un coup d'œil.
+- [x] **Détail sur S3** : fichiers journels `.rds` dans `stockToolsR/logs/` — diagnostic et historique long.
+- [ ] **Module Shiny de consultation des logs** (projet en cours) : afficher le résumé du dernier run (table `cron_log`) + accès au détail des erreurs (fichier `.rds` jour sur S3). Fonctions à écrire dans `R/`.
+
+### Points à traiter au fil de la révision
+
+- [ ] Fuite de clé API en dur dans `inst/script/0-plan.R` : retirer la clé hardcodée, passer par `Sys.getenv()`.
+- [ ] Valeurs magiques (ex: fenêtre `375` dans `valuation_stockprice`) — rendre paramétrables.
+- [ ] **Fenêtre du calendrier de publications (`03_earning_cal.R`)** : `-5/+15` jours est adapté à un cron quotidien, mais crée un « trou » en cas d'arrêt prolongé du script. Évaluer une fenêtre plus large (-2 mois/+1 mois) ou un rattrapage pour couvrir les publications d'une période d'arrêt.
 
 ---
 
@@ -25,10 +55,6 @@ Améliorations identifiées durant le développement, à traiter ultérieurement
 - [ ] Gestion des erreurs API FMP dans les boucles `purrr::walk/map`
   - Ajouter `tryCatch()` systématiquement pour logger les échecs et continuer sans planter
 
-- [ ] Log des runs du cron — aucune trace persistante des exécutions
-  - Ajouter une table `cron_log` (date, étape, statut, message) ou un fichier de log
-  - Permettrait de diagnostiquer des problèmes après coup
-
 - [ ] `3-splits_processing.R` : vérifier que `fail_split()` est bien appelée en cas d'erreur
   - La fonction existe mais la gestion d'erreur du pipeline n'est pas complète
 
@@ -41,6 +67,14 @@ Améliorations identifiées durant le développement, à traiter ultérieurement
 
 - [ ] Validation post-`tidy_stmts()` sur quelques grandes compagnies (AAPL, MSFT)
   - Vérifier que les valeurs TTM reconstruites sont cohérentes (ex: via `assertr`)
+
+---
+
+## Périmètre des compagnies
+
+- [ ] **Élargir au-delà du S&P 500** : le pipeline est pensé pour le S&P 500 (`GetSP500Stocks()` dans `0-plan.R`). Évaluer un support de 2000 à 4000 compagnies USA (abonnement FMP limité aux compagnies USA). Nécessite de rendre la liste de tickers flexible (configurable) et de vérifier les limites d'appels API (300/min).
+
+- [ ] **Ajout manuel/semi-manuel de compagnies canadiennes** : FMP (abonnement actuel) ne couvre pas le Canada. Souhait : pouvoir ajouter manuellement des compagnies canadiennes (pour alertes / watchlist). Nécessite une source de données pour les tickers CA + une méthode d'ajout (via watchlist ou config).
 
 ---
 

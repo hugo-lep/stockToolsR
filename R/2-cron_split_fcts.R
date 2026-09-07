@@ -161,3 +161,32 @@ confirm_split <- function(con, symbol, split_date, notes = NULL) {
     message("Split confirmé : ", symbol, " | ", split_date)
     invisible(NULL)
 }
+
+#' Marquer un split comme échoué
+#'
+#' @description
+#' Met à jour la ligne correspondante dans `split_log` pour indiquer que le
+#' nettoyage des données a échoué. Le champ `status` passe à `"failed"` et
+#' `notes` conserve le message d'erreur.
+#'
+#' @param con Objet `DBIConnection`
+#' @param symbol Ticker de l'action (ex: `"AAPL"`)
+#' @param split_date Date du split (`Date` ou `character` au format `"YYYY-MM-DD"`)
+#' @param notes Optionnel : texte libre (ex: message d'erreur).
+#'
+#' @return Invisiblement NULL.
+#'
+#' @importFrom DBI dbExecute
+#'
+#' @export
+fail_split <- function(con, symbol, split_date, notes = NULL) {
+    DBI::dbExecute(con, "
+    UPDATE stocktools.split_log
+    SET status = 'failed',
+        notes  = $3
+    WHERE symbol     = $1
+      AND split_date = $2;
+  ", params = list(symbol, as.character(split_date), notes))
+    message("Split échoué : ", symbol, " | ", split_date)
+    invisible(NULL)
+}

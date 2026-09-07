@@ -1,22 +1,18 @@
-# shiny_test6.R — Test du module mod_finance6
+# shiny_test_logs.R — Test du module mod_logs
 #
 # Prérequis : tunnel SSH actif vers le VPS PostgreSQL
-# Lancer depuis RStudio : shiny::runApp("inst/shiny_test/shiny_test6.R")
+# Lancer depuis RStudio : shiny::runApp("inst/shiny_test/shiny_test_logs.R")
 
 library(shiny)
 library(bslib)
-library(bsicons)
 library(dplyr)
-library(ggplot2)
-library(scales)
 library(DBI)
 library(RPostgres)
-library(lubridate)
 library(s3db)
 devtools::load_all()
 
 # Connexion PostgreSQL
-s3_connection_HL(config_path = "../app/data")
+s3_connection_HL()
 config_global <- s3readRDS_HL(object = "config_files/config_global.rds")
 
 con <- dbConnect(
@@ -34,14 +30,13 @@ ui <- bslib::page_fillable(
         bootswatch = "flatly",
         base_font  = bslib::font_google("Inter")
     ),
-    mod_finance6_ui("finance6")
+    mod_logs_ui("logs")
 )
 
 server <- function(input, output, session) {
-    mod_finance6_server("finance6", con = con)
+    mod_logs_server("logs", con = con)
 }
 
 #shiny::onStop(function() DBI::dbDisconnect(con))
 
 shiny::shinyApp(ui, server)
-

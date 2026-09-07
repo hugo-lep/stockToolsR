@@ -4,6 +4,7 @@
 #   (pas de vraies variables globales — c'est le mécanisme standard tidyverse)
 # - @importFrom : fonctions de packages déjà en Imports dans DESCRIPTION
 
+#' @importFrom aws.s3 head_object
 #' @importFrom stats na.omit setNames median
 #' @importFrom rlang .data :=
 #' @importFrom tidyr drop_na

@@ -4,3 +4,6 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^CLAUDE\.md$
+^AGENTS\.md$
+^\.env$
+^\.aider\.tags\.cache\.v4$
