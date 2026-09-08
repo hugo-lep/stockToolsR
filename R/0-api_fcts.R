@@ -68,24 +68,10 @@ log_append <- function(etape, statut, symbol = NA_character_, message = "") {
     invisible(NULL)
 }
 
-# Vérifie l'existence d'un objet S3 (via une requête HEAD, sans télécharger).
+# Vérifie l'existence d'un objet S3 (via s3db::s3exist_HL).
 # Retourne TRUE/FALSE. Utilise les paramètres HL_S3_* posés par s3_connection_HL().
 .s3_obj_exists <- function(object_name) {
-    main_folder <- Sys.getenv("HL_S3_MAIN_FOLDER")
-    full_object <- if (main_folder == "") object_name else paste0(main_folder, "/", object_name)
-
-    res <- tryCatch(
-        aws.s3::head_object(
-            object   = full_object,
-            bucket   = Sys.getenv("HL_S3_BUCKET"),
-            key      = Sys.getenv("HL_S3_KEY"),
-            secret   = Sys.getenv("HL_S3_SECRET"),
-            region   = Sys.getenv("HL_S3_REGION"),
-            base_url = Sys.getenv("HL_S3_ENDPOINT")
-        ),
-        error = function(e) NULL
-    )
-    !is.null(res)
+    s3db::s3exist_HL(object = object_name)
 }
 
 #' Écrire le résumé en DB + le détail sur S3 (fin de run)
