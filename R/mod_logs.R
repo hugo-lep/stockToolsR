@@ -48,7 +48,12 @@ mod_logs_server <- function(id, con) {
 
         # Résumé des derniers runs (table cron_log)
         output$summary <- shiny::renderTable({
-            log_get_summary(con, n = 10)
+            log_get_summary(con, n = 10) |>
+                dplyr::mutate(
+                    run_date    = format(.data$run_date, "%Y-%m-%d"),
+                    started_at  = format(.data$started_at, "%Y-%m-%d %H:%M:%S"),
+                    finished_at = format(.data$finished_at, "%Y-%m-%d %H:%M:%S")
+                )
         })
 
         # Mise à jour du sélecteur avec les dates disponibles sur S3

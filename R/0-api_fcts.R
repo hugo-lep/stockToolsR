@@ -146,9 +146,9 @@ log_flush <- function(con, run_id = NULL, s3_folder = "stockToolsR/logs") {
               (run_date, started_at, finished_at, statut, nb_ok, nb_warn, nb_err, message)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         ", params = list(
-            as.Date(started_at),
-            started_at,
-            Sys.time(),
+            format(started_at, "%Y-%m-%d"),
+            format(started_at, "%Y-%m-%d %H:%M:%S"),
+            format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
             statut_global,
             nb_ok, nb_warn, nb_err,
             message_resume
@@ -160,9 +160,9 @@ log_flush <- function(con, run_id = NULL, s3_folder = "stockToolsR/logs") {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         ", params = list(
             run_id,
-            as.Date(started_at),
-            started_at,
-            Sys.time(),
+            format(started_at, "%Y-%m-%d"),
+            format(started_at, "%Y-%m-%d %H:%M:%S"),
+            format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
             statut_global,
             nb_ok, nb_warn, nb_err,
             message_resume
@@ -237,7 +237,13 @@ fmp_get <- function(endpoint, params = list(), key_fmp_api, max_retries = 3) {
             return(NULL)
         }
 
-        Sys.sleep(0.2 * attempt)
+        # Si rate limit (429), attendre plus longtemps avant de réessayer
+        statut_http <- if (is.null(res)) NA_integer_ else httr::status_code(res)
+        if (!is.na(statut_http) && statut_http == 429) {
+            Sys.sleep(60)
+        } else {
+            Sys.sleep(0.2 * attempt)
+        }
     }
 }
 

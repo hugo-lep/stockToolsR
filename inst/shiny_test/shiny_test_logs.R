@@ -40,3 +40,4 @@ server <- function(input, output, session) {
 #shiny::onStop(function() DBI::dbDisconnect(con))
 
 shiny::shinyApp(ui, server)
+
