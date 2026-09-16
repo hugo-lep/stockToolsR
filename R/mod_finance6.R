@@ -52,6 +52,9 @@ mod_finance6_ui1 <- function(id) {
                 shiny::selectInput(ns("secteur_f"), "Secteur :",
                                    choices = "Tous", selected = "Tous"),
                 shiny::tags$hr(class = "my-1"),
+                shiny::selectInput(ns("industrie_f"), "Industrie :",
+                                   choices = "Tous", selected = "Tous"),
+                shiny::tags$hr(class = "my-1"),
                 .build_checkbox_ui2(ns, .filter_defs2),
                 shiny::tags$hr(class = "my-1"),
                 shiny::checkboxInput(ns("avec_div"), "Avec dividende", value = FALSE),
@@ -351,6 +354,7 @@ mod_finance6_ui <- function(id) {
 #' @importFrom ggplot2 ggplot aes geom_ribbon geom_line scale_y_continuous
 #'   labs theme_minimal theme element_blank margin
 #' @importFrom tidyr drop_na
+#' @importFrom tibble deframe
 #'
 #' @export
 mod_finance6_server <- function(id, con) {
@@ -475,6 +479,27 @@ mod_finance6_server <- function(id, con) {
                                      selected = "Tous")
         }, once = TRUE, ignoreNULL = TRUE, ignoreInit = FALSE)
 
+        # Filtre industrie — les choix dépendent du secteur sélectionné
+        industries_par_secteur <- base_data6 |>
+            dplyr::select(sector, industry) |>
+            tidyr::drop_na(sector, industry) |>
+            dplyr::distinct() |>
+            dplyr::group_by(sector) |>
+            dplyr::summarise(industries = list(sort(unique(industry))),
+                             .groups = "drop") |>
+            tibble::deframe()
+
+        shiny::observeEvent(input$secteur_f, {
+            if (is.null(input$secteur_f) || input$secteur_f == "Tous") {
+                choix <- sort(unique(stats::na.omit(base_data6$industry)))
+            } else {
+                choix <- industries_par_secteur[[input$secteur_f]]
+            }
+            shiny::updateSelectInput(session, "industrie_f",
+                                     choices  = c("Tous", choix),
+                                     selected = "Tous")
+        })
+
         # Filtres actifs
 
         output$div_checkbox_ui <- shiny::renderUI({
@@ -526,6 +551,9 @@ mod_finance6_server <- function(id, con) {
 
             if (!is.null(input$secteur_f) && input$secteur_f != "Tous")
                 df <- df |> dplyr::filter(sector == input$secteur_f)
+
+            if (!is.null(input$industrie_f) && input$industrie_f != "Tous")
+                df <- df |> dplyr::filter(industry == input$industrie_f)
 
             if (isTRUE(input$avec_div))
                 df <- df[!is.na(df$div_ttm) & df$div_ttm > 0, ]

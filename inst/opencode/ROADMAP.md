@@ -5,10 +5,9 @@ Backlog : performance, robustesse, qualité des données, dette technique.
 
 ---
 
-## Révision du cron — `inst/script2/` (priorité)
+## Révision du cron — `inst/script2/` (fait)
 
-Réécriture complète du pipeline actuel (`inst/script/`), un fichier à la fois, dans `inst/script2/`.
-Les scripts actuels restent intacts pendant la révision.
+Réécriture complète du pipeline dans `inst/script2/` : c'est maintenant la version officielle, exécutée quotidiennement sur le VPS via crontab (`Rscript inst/script2/0-plan.R`). L'ancien dossier `inst/script/` a été supprimé.
 
 ### Fiabilité (décisions prises pour la nouvelle version)
 
@@ -26,9 +25,8 @@ Les scripts actuels restent intacts pendant la révision.
 - [x] **Détail sur S3** : fichiers journels `.rds` dans `stockToolsR/logs/` — diagnostic et historique long.
 - [ ] **Module Shiny de consultation des logs** (projet en cours) : afficher le résumé du dernier run (table `cron_log`) + accès au détail des erreurs (fichier `.rds` jour sur S3). Fonctions à écrire dans `R/`.
 
-### Points à traiter au fil de la révision
+### Points à traiter
 
-- [ ] Fuite de clé API en dur dans `inst/script/0-plan.R` : retirer la clé hardcodée, passer par `Sys.getenv()`.
 - [ ] Valeurs magiques (ex: fenêtre `375` dans `valuation_stockprice`) — rendre paramétrables.
 - [ ] **Fenêtre du calendrier de publications (`03_earning_cal.R`)** : `-5/+15` jours est adapté à un cron quotidien, mais crée un « trou » en cas d'arrêt prolongé du script. Évaluer une fenêtre plus large (-2 mois/+1 mois) ou un rattrapage pour couvrir les publications d'une période d'arrêt.
 
@@ -45,7 +43,7 @@ Les scripts actuels restent intacts pendant la révision.
   - Même logique que `tidy_stmts()` : passer `symbols_updated`
   - Les 8 appels `slide_index_dbl()` sur données quotidiennes sont le bloc le plus lourd
 
-- [ ] `1-profiles.R` : `cies_profile_build()` reconstruite entièrement à chaque run
+- [ ] `cies_profile_build()` reconstruite entièrement à chaque run (`01_profiles.R`)
   - Remplacer par un upsert ciblé sur les 3 profils rafraîchis seulement
 
 ---
@@ -55,7 +53,7 @@ Les scripts actuels restent intacts pendant la révision.
 - [ ] Gestion des erreurs API FMP dans les boucles `purrr::walk/map`
   - Ajouter `tryCatch()` systématiquement pour logger les échecs et continuer sans planter
 
-- [ ] `3-splits_processing.R` : vérifier que `fail_split()` est bien appelée en cas d'erreur
+- [ ] `02_splits.R` : vérifier que `fail_split()` est bien appelée en cas d'erreur
   - La fonction existe mais la gestion d'erreur du pipeline n'est pas complète
 
 ---
@@ -80,10 +78,10 @@ Les scripts actuels restent intacts pendant la révision.
 
 ## Fonctionnalités futures
 
-- [ ] Externaliser les `keep_cols_*` de `9-tidy_stmts.R` dans un fichier de config sur S3
+- [ ] Externaliser les `keep_cols_*` de `06_tidy_stmts.R` dans un fichier de config sur S3
   - Évite de modifier le script pour changer les colonnes conservées
 
-- [ ] Étape `10-ratios.R` — calcul de ratios financiers
+- [ ] Étape valorisation/CAGR (`07_valcagr.R`) — calcul des ratios financiers
   - P/E, EV/EBITDA, etc. à partir de `financial_stmts_build` + `stockprice`
   - Référence : `inst/R_temp/calcul_ratio.R`
 
@@ -91,7 +89,7 @@ Les scripts actuels restent intacts pendant la révision.
   - Consommera `financial_stmts_build`, `stockprice`, `dividendes`
 
 - [ ] Tableau Croissance (`mod_finance4`) — ajouter des lignes CAGR
-  - Nécessite d'abord d'ajouter les colonnes au pipeline CAGR (`10-cagr_stmts.R` ou équivalent)
+  - Nécessite d'abord d'ajouter les colonnes au pipeline CAGR (`07_valcagr.R` ou équivalent)
   - Colonnes cibles : `bs_totalassets`, `bs_totalliabilities`, `cf_netcashprovidedbyoperatingactivities`
   - Optionnel : variation des actions en circulation (`is_weightedaverageshsout`)
   - Préfixes attendus dans `cagr_stmts_build` : `cagr_1_bs_totalassets`, `cagr_3_bs_totalassets`, etc.

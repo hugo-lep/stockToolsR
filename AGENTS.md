@@ -8,8 +8,7 @@ Package R pour collecter, stocker et analyser des données financières boursiè
 - **Un fichier à la fois.** Ne jamais créer ou modifier plus d'un fichier par échange.
 - Toujours proposer et attendre la validation avant de passer au fichier suivant.
 - **Ne jamais modifier un fichier sans que l'utilisateur en fasse la demande explicite.**
-- Les scripts du cron actuel (`inst/script/`) restent **intacts** pendant la révision : l'utilisateur continue de les utiliser quotidiennement.
-- La version révisée est construite **un fichier à la fois** dans `inst/script2/`. On ne passe au script suivant que lorsque l'utilisateur l'a clairement énoncé.
+- Le cron officiel est `inst/script2/` (exécuté quotidiennement sur le VPS via crontab, lancé par `Rscript inst/script2/0-plan.R`). L'ancien dossier `inst/script/` a été supprimé.
 - **Répondre de manière concise**, sans préambule, sans résumé inutile, sans explications superflues. Aller droit au but.
 
 ## Gestion des améliorations
@@ -39,7 +38,6 @@ Package R pour collecter, stocker et analyser des données financières boursiè
 
 - **La clé API FMP ne doit jamais être écrite en dur** dans le code. Toujours via `Sys.getenv("key_fmp_api")`.
 - Passer la clé API par **header HTTP**, pas dans l'URL, pour éviter la fuite dans les logs.
-- La clé actuellement en dur dans `inst/script/0-plan.R` est une fuite à corriger (à traiter en révision).
 
 ## Contrainte API FMP
 
@@ -54,4 +52,4 @@ Règle : `Sys.sleep(0.2)` minimum entre chaque appel (= max ~5 tickers/sec).
 - Paramètre de connexion toujours nommé `con`.
 - Scripts numérotés `0-plan.R`, `00_api.R`, `01-*.R`, `02-*.R` … dans `inst/script2/`.
 - Quand les scripts seront stables → encapsuler en fonctions dans `R/`.
-- **Nouveaux fichiers/fonctions dans `R/`** : ne pas écraser un fichier existant utilisé par les scripts actuels (`inst/script/`). Si une fonction `R/` existe mais ne convient pas, créer un nouveau fichier ET une nouvelle fonction avec un nom légèrement différent (ex: `fmp_get_stmts_cie` vs `fmp_get_stmts_new_cie`).
+- **Nouveaux fichiers/fonctions dans `R/`** : ne pas écraser un fichier existant utilisé par les scripts actuels (`inst/script2/`). Si une fonction `R/` existe mais ne convient pas, créer un nouveau fichier ET une nouvelle fonction avec un nom légèrement différent (ex: `fmp_get_stmts_cie` vs `fmp_get_stmts_new_cie`).
