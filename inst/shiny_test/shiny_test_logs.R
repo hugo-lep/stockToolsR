@@ -12,7 +12,8 @@ library(s3db)
 devtools::load_all()
 
 # Connexion PostgreSQL
-s3_connection_HL()
+#s3_connection_HL()
+s3_connection_HL(config_path = "../app/data")
 config_global <- s3readRDS_HL(object = "config_files/config_global.rds")
 
 con <- dbConnect(

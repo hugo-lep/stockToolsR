@@ -224,8 +224,8 @@ build_industry_table <- function(ind, horizons, comp = NULL, secteur = NULL) {
         compact     = TRUE,
         pagination  = FALSE,
         style = list(
-            backgroundColor = "#f7f7f7",
-            border          = "1px solid #ddd"
+            backgroundColor = "rgba(0, 0, 0, 0.03)",
+            border          = "1px solid rgba(128, 128, 128, 0.3)"
         )
     )
 }
@@ -257,8 +257,8 @@ build_company_table <- function(comp, horizons) {
         compact     = TRUE,
         pagination  = FALSE,
         style = list(
-            backgroundColor = "#f3f3f3",
-            border          = "1px solid #ccc"
+            backgroundColor = "rgba(0, 0, 0, 0.06)",
+            border          = "1px solid rgba(128, 128, 128, 0.35)"
         )
     )
 }

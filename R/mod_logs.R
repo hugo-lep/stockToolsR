@@ -41,6 +41,7 @@ mod_logs_ui <- function(id) {
 #' @return Invisiblement NULL.
 #'
 #' @importFrom shiny moduleServer renderTable req reactive updateSelectInput
+#'   invalidateLater
 #'
 #' @export
 mod_logs_server <- function(id, con) {
@@ -56,10 +57,18 @@ mod_logs_server <- function(id, con) {
                 )
         })
 
-        # Mise à jour du sélecteur avec les dates disponibles sur S3
+        # Mise à jour du sélecteur avec les dates disponibles sur S3.
+        # Tant que S3 n'est pas prêt (course d'initialisation au démarrage de
+        # l'app), on re-tente périodiquement ; dès que des dates existent, on
+        # remplit le sélecteur et on arrête de re-tenter.
         shiny::observe({
             dates <- log_list_dates()
-            shiny::updateSelectInput(session, "choix_date", choices = dates)
+            if (length(dates) > 0) {
+                shiny::updateSelectInput(session, "choix_date",
+                                         choices = dates)
+            } else {
+                shiny::invalidateLater(1000, session)
+            }
         })
 
         # Détail des logs de la date sélectionnée
