@@ -17,7 +17,8 @@
 #'
 #' @return Une UI Shiny (card bslib).
 #'
-#' @importFrom shiny NS selectInput tableOutput
+#' @importFrom shiny NS selectInput tableOutput actionButton tagList
+#' @importFrom bsicons bs_icon
 #' @importFrom bslib card card_body
 #'
 #' @export
@@ -26,9 +27,26 @@ mod_logs_ui <- function(id) {
     bslib::card(
         bslib::card_header("Logs du cron"),
         bslib::card_body(
-            shiny::selectInput(ns("choix_date"), "Date du log", choices = NULL),
-            shiny::tableOutput(ns("summary")),
-            shiny::tableOutput(ns("detail"))
+            shiny::tagList(
+                shiny::div(
+                    class = "d-flex align-items-center gap-2",
+                    shiny::div(
+                        style = "flex:1;",
+                        shiny::selectInput(ns("choix_date"), "Date du log",
+                                           choices = NULL)
+                    ),
+                    shiny::actionButton(
+                        ns("reset_dates"),
+                        label = shiny::tagList(
+                            bsicons::bs_icon("arrow-clockwise"),
+                            " Recharger"
+                        ),
+                        title = "Recharger les dates de logs disponibles"
+                    )
+                ),
+                shiny::tableOutput(ns("summary")),
+                shiny::tableOutput(ns("detail"))
+            )
         )
     )
 }
@@ -41,7 +59,7 @@ mod_logs_ui <- function(id) {
 #' @return Invisiblement NULL.
 #'
 #' @importFrom shiny moduleServer renderTable req reactive updateSelectInput
-#'   invalidateLater
+#'   invalidateLater observeEvent
 #'
 #' @export
 mod_logs_server <- function(id, con) {
@@ -61,8 +79,21 @@ mod_logs_server <- function(id, con) {
         # Tant que S3 n'est pas prêt (course d'initialisation au démarrage de
         # l'app), on re-tente périodiquement ; dès que des dates existent, on
         # remplit le sélecteur et on arrête de re-tenter.
+        #
+        # tryCatch : une erreur S3 transitoire (ex. connexion froide au premier
+        # appel, timeout réseau) ne doit PAS casser l'observe définitivement.
+        # Sans ce garde, l'observe plante une seule fois et le sélecteur reste
+        # vide pour toute la session — on bascule plutôt sur invalidateLater()
+        # pour re-tenter.
         shiny::observe({
-            dates <- log_list_dates()
+            dates <- tryCatch(
+                log_list_dates(),
+                error = function(e) {
+                    warning("mod_logs : log_list_dates() a échoué — re-tentative : ",
+                            conditionMessage(e))
+                    NULL
+                }
+            )
             if (length(dates) > 0) {
                 shiny::updateSelectInput(session, "choix_date",
                                          choices = dates)
@@ -71,10 +102,34 @@ mod_logs_server <- function(id, con) {
             }
         })
 
+        # Bouton "Recharger" : force le rechargement des dates S3 et met à jour
+        # le sélecteur. Utile si la connexion S3 n'était pas prête au démarrage
+        # ou a changé en cours de session.
+        shiny::observeEvent(input$reset_dates, {
+            dates <- tryCatch(
+                log_list_dates(),
+                error = function(e) {
+                    warning("mod_logs : log_list_dates() a échoué (reset) : ",
+                            conditionMessage(e))
+                    NULL
+                }
+            )
+            shiny::updateSelectInput(session, "choix_date",
+                                     choices = if (length(dates) > 0) dates
+                                               else character(0))
+        })
+
         # Détail des logs de la date sélectionnée
         detail <- shiny::reactive({
             shiny::req(input$choix_date)
-            log_get_detail(input$choix_date)
+            tryCatch(
+                log_get_detail(input$choix_date),
+                error = function(e) {
+                    warning("mod_logs : log_get_detail() a échoué pour ",
+                            input$choix_date, " : ", conditionMessage(e))
+                    NULL
+                }
+            )
         })
 
         output$detail <- shiny::renderTable({
