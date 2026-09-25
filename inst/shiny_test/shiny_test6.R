@@ -3,6 +3,7 @@
 # Prérequis : tunnel SSH actif vers le VPS PostgreSQL
 # Lancer depuis RStudio : shiny::runApp("inst/shiny_test/shiny_test6.R")
 
+
 library(shiny)
 library(bslib)
 library(bsicons)
