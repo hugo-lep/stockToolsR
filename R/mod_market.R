@@ -52,20 +52,27 @@ mod_market_ui <- function(id) {
 #' @param companies_df Optionnel. Résultat de `perf_companies(con, horizons)`.
 #'   S'il est fourni, `con` est ignoré et on utilise directement ce dataframe
 #'   (utile pour tester le module sans base, ou pour éviter un rechargement).
+#' @param theme     Optionnel. Objet `bslib::bs_theme()` de la page hôte. Si
+#'   fourni, les tableaux reactable s'adaptent aux couleurs du thème (injecté
+#'   depuis la page plutôt que dupliqué en dur). Si NULL, un thème sombre de
+#'   repli cohérent est utilisé.
 #'
 #' @return Invisiblement NULL.
 #'
 #' @importFrom shiny moduleServer reactive renderUI
 #' @importFrom bslib value_box layout_columns
-#' @importFrom reactable reactable colDef colFormat renderReactable
+#' @importFrom reactable reactable colDef colFormat renderReactable reactableTheme
 #' @importFrom rlang .data exec
 #' @importFrom purrr map
 #' @importFrom dplyr filter select all_of
 #'
 #' @export
 mod_market_server <- function(id, con, horizons = c(1, 5, 21, 63, 252),
-                              companies_df = NULL) {
+                              companies_df = NULL, theme = NULL) {
     shiny::moduleServer(id, function(input, output, session) {
+
+        # Thème reactable : adapté au thème bslib injecté, sinon sombre par défaut
+        rt_theme <- market_reactable_theme(theme)
 
         # Fonction d'agrégation selon le toggle (FALSE -> moyenne, TRUE -> médiane)
         metric <- shiny::reactive({
@@ -132,7 +139,8 @@ mod_market_server <- function(id, con, horizons = c(1, 5, 21, 63, 252),
                         )
                         build_industry_table(
                             ind, horizons,
-                            comp = companies(), secteur = sec
+                            comp = companies(), secteur = sec,
+                            theme = rt_theme
                         )
                     }
                 )
@@ -144,7 +152,8 @@ mod_market_server <- function(id, con, horizons = c(1, 5, 21, 63, 252),
                 sortable = TRUE,
                 compact  = TRUE,
                 striped  = TRUE,
-                pagination = FALSE
+                pagination = FALSE,
+                theme    = rt_theme$theme
             )
         })
 
@@ -184,8 +193,11 @@ horizon_label <- function(k) {
 #' @param horizons Vecteur numérique des horizons.
 #' @param comp Tibble des compagnies (symbol, sector, industry, perf_*).
 #' @param secteur Secteur courant (chaîne), pour filtrer les compagnies.
+#' @param theme Liste `list(theme, dark)` issue de `market_reactable_theme()`.
 #' @noRd
-build_industry_table <- function(ind, horizons, comp = NULL, secteur = NULL) {
+build_industry_table <- function(ind, horizons, comp = NULL, secteur = NULL,
+                                 theme = NULL) {
+    if (is.null(theme)) theme <- market_reactable_theme(NULL)
     ccols <- purrr::map(horizons, \(k) {
         reactable::colDef(
             header = horizon_label(k),
@@ -207,7 +219,7 @@ build_industry_table <- function(ind, horizons, comp = NULL, secteur = NULL) {
                     "symbol",
                     dplyr::all_of(paste0("perf_", horizons))
                 )
-            build_company_table(comp_sec, horizons)
+            build_company_table(comp_sec, horizons, theme = theme)
         }
     )
 
@@ -223,9 +235,10 @@ build_industry_table <- function(ind, horizons, comp = NULL, secteur = NULL) {
         sortable    = TRUE,
         compact     = TRUE,
         pagination  = FALSE,
+        theme       = theme$theme,
         style = list(
-            backgroundColor = "rgba(0, 0, 0, 0.03)",
-            border          = "1px solid rgba(128, 128, 128, 0.3)"
+            backgroundColor = market_mini_bg(theme),
+            border          = market_mini_border(theme)
         )
     )
 }
@@ -234,8 +247,10 @@ build_industry_table <- function(ind, horizons, comp = NULL, secteur = NULL) {
 #'
 #' @param comp Tibble des compagnies (symbol, perf_*).
 #' @param horizons Vecteur numérique des horizons.
+#' @param theme Liste `list(theme, dark)` issue de `market_reactable_theme()`.
 #' @noRd
-build_company_table <- function(comp, horizons) {
+build_company_table <- function(comp, horizons, theme = NULL) {
+    if (is.null(theme)) theme <- market_reactable_theme(NULL)
     ccols <- purrr::map(horizons, \(k) {
         reactable::colDef(
             header = horizon_label(k),
@@ -256,9 +271,126 @@ build_company_table <- function(comp, horizons) {
         sortable    = TRUE,
         compact     = TRUE,
         pagination  = FALSE,
+        theme       = theme$theme,
         style = list(
-            backgroundColor = "rgba(0, 0, 0, 0.06)",
-            border          = "1px solid rgba(128, 128, 128, 0.35)"
+            backgroundColor = market_mini_bg(theme, level = 2),
+            border          = market_mini_border(theme, level = 2)
         )
     )
+}
+
+#' Construire un thème reactable cohérent avec le thème bslib de la page
+#'
+#' @description
+#' Extrait les couleurs d'un thème `bslib::bs_theme()` injecté (via
+#' `bslib::bs_get_variables()`) et construit un `reactable::reactableTheme()`.
+#' Si `theme` est NULL, utilise un thème sombre de repli cohérent avec
+#' `hl_theme()` (primary `#3c8dbc`, fond `#303030`, texte `#e0e0e0`).
+#'
+#' @param theme Optionnel. Objet `bslib::bs_theme()` de la page hôte, ou NULL.
+#'
+#' @return Une liste `list(theme = reactableTheme, dark = logical)`.
+#'   `dark` indique si le fond est sombre, utilisé pour les mini-tables.
+#'
+#' @importFrom bslib bs_get_variables
+#' @importFrom reactable reactableTheme
+#'
+#' @noRd
+market_reactable_theme <- function(theme = NULL) {
+    # Couleurs par défaut (fallback sombre cohérent avec hl_theme)
+    primary <- "#3c8dbc"
+    bg      <- "#303030"
+    color   <- "#e0e0e0"
+    border  <- "#444444"
+    dark    <- TRUE
+
+    if (!is.null(theme)) {
+        vars <- tryCatch(
+            bslib::bs_get_variables(
+                theme,
+                c("primary", "body-bg", "body-color",
+                  "border-color", "secondary")
+            ),
+            error = function(e) NULL
+        )
+        if (!is.null(vars)) {
+            primary <- if (!is.na(vars[["primary"]])) vars[["primary"]] else primary
+            bg      <- if (!is.na(vars[["body-bg"]]))   vars[["body-bg"]]   else bg
+            color   <- if (!is.na(vars[["body-color"]])) vars[["body-color"]] else color
+            border  <- if (!is.na(vars[["border-color"]])) vars[["border-color"]] else border
+            # Détecte un thème clair/sombre via la luminosité du fond
+            dark <- luminance(bg) < 0.5
+        }
+    }
+
+    rt <- reactable::reactableTheme(
+        color           = color,
+        backgroundColor = bg,
+        borderColor     = border,
+        highlightColor  = if (dark) "rgba(255, 255, 255, 0.15)"
+                          else "rgba(0, 0, 0, 0.08)",
+        stripedColor    = if (dark) "rgba(255, 255, 255, 0.03)"
+                          else "rgba(0, 0, 0, 0.03)",
+        headerStyle     = list(
+            backgroundColor = if (dark) "rgba(255, 255, 255, 0.06)"
+                              else "rgba(0, 0, 0, 0.04)",
+            color           = primary,
+            borderColor     = border
+        )
+    )
+
+    list(theme = rt, dark = dark)
+}
+
+#' Luminosité perçue d'une couleur hexadécimale (0 = noir, 1 = blanc)
+#'
+#' @param col Couleur hexadécimale (ex. `"#303030"` ou `"#222"`).
+#' @return Un scalaire entre 0 et 1.
+#' @noRd
+luminance <- function(col) {
+    hex <- gsub("#", "", col)
+    # Couleur courte 3 chiffres (ex. "#222") -> dupliquer chaque chiffre
+    if (grepl("^[0-9a-fA-F]{3}$", hex)) {
+        hex <- paste0(substring(hex, 1, 1), substring(hex, 1, 1),
+                      substring(hex, 2, 2), substring(hex, 2, 2),
+                      substring(hex, 3, 3), substring(hex, 3, 3))
+    }
+    if (!grepl("^[0-9a-fA-F]{6}$", hex)) return(1)
+    rgb_vals <- strtoi(substring(hex, c(1, 3, 5), c(2, 4, 6)), base = 16)
+    (0.299 * rgb_vals[1] + 0.587 * rgb_vals[2] + 0.114 * rgb_vals[3]) / 255
+}
+
+#' Fond des mini-tables (niveaux imbriqués) selon le mode sombre/clair
+#'
+#' @param theme Liste `list(theme, dark)`.
+#' @param level Niveau d'imbrication (1 = industrie, 2 = compagnie).
+#' @return Une couleur CSS.
+#' @noRd
+market_mini_bg <- function(theme, level = 1) {
+    dark <- isTRUE(theme$dark)
+    # Blancs/Noirs semi-transparents pour décaler visuellement les niveaux,
+    # adaptés au mode du thème.
+    if (dark) {
+        if (level == 1) "rgba(255, 255, 255, 0.04)"
+        else            "rgba(255, 255, 255, 0.12)"
+    } else {
+        if (level == 1) "rgba(0, 0, 0, 0.03)"
+        else            "rgba(0, 0, 0, 0.06)"
+    }
+}
+
+#' Bordure des mini-tables selon le mode sombre/clair
+#'
+#' @param theme Liste `list(theme, dark)`.
+#' @param level Niveau d'imbrication (1 = industrie, 2 = compagnie).
+#' @return Une chaîne CSS `border`.
+#' @noRd
+market_mini_border <- function(theme, level = 1) {
+    if (isTRUE(theme$dark)) {
+        if (level == 1) "1px solid rgba(255, 255, 255, 0.3)"
+        else            "1px solid rgba(255, 255, 255, 0.35)"
+    } else {
+        if (level == 1) "1px solid rgba(128, 128, 128, 0.3)"
+        else            "1px solid rgba(128, 128, 128, 0.35)"
+    }
 }

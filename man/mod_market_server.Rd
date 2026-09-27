@@ -8,7 +8,8 @@ mod_market_server(
   id,
   con,
   horizons = c(1, 5, 21, 63, 252),
-  companies_df = NULL
+  companies_df = NULL,
+  theme = NULL
 )
 }
 \arguments{
@@ -21,6 +22,11 @@ mod_market_server(
 \item{companies_df}{Optionnel. Résultat de `perf_companies(con, horizons)`.
 S'il est fourni, `con` est ignoré et on utilise directement ce dataframe
 (utile pour tester le module sans base, ou pour éviter un rechargement).}
+
+\item{theme}{Optionnel. Objet `bslib::bs_theme()` de la page hôte. Si
+fourni, les tableaux reactable s'adaptent aux couleurs du thème (injecté
+depuis la page plutôt que dupliqué en dur). Si NULL, un thème sombre de
+repli cohérent est utilisé.}
 }
 \value{
 Invisiblement NULL.
