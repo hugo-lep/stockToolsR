@@ -151,7 +151,6 @@ mod_market_server <- function(id, con, horizons = c(1, 5, 21, 63, 252),
                 columns = c(base_cols, perf_cols),
                 sortable = TRUE,
                 compact  = TRUE,
-                striped  = TRUE,
                 pagination = FALSE,
                 theme    = rt_theme$theme
             )

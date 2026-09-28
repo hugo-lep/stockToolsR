@@ -46,7 +46,8 @@ if (isTRUE(UTILISER_FACTICE)) {
     # ---------------------------------------------------------------------------
     # Connexion PostgreSQL (tunnel SSH en local, localhost sur le VPS)
     # ---------------------------------------------------------------------------
-    s3_connection_HL()
+#    s3_connection_HL(config_path = "../app/data")
+  s3_connection_HL()
     config_global <- s3readRDS_HL(object = "config_files/config_global.rds")
 
     con <- dbConnect(
@@ -63,13 +64,21 @@ if (isTRUE(UTILISER_FACTICE)) {
 }
 
 # ---------------------------------------------------------------------------
+# Thème de test : sombre (darkly + primary) pour reproduire le thème de la
+# page finance (bslibHL::hl_theme). Injecté au module pour vérifier
+# l'adaptation des tableaux reactable sans devoir installer le package dans
+# le projet finance.
+# ---------------------------------------------------------------------------
+theme_test <- bslib::bs_theme(
+    bootswatch = "darkly",
+    primary    = "#3c8dbc"
+)
+
+# ---------------------------------------------------------------------------
 # Application test
 # ---------------------------------------------------------------------------
 ui <- bslib::page_fillable(
-    theme = bslib::bs_theme(
-        bootswatch = "flatly",
-        base_font  = bslib::font_google("Inter")
-    ),
+    theme = theme_test,
     mod_market_ui("market")
 )
 
@@ -77,7 +86,8 @@ server <- function(input, output, session) {
     mod_market_server(
         "market",
         con = if (isTRUE(UTILISER_FACTICE)) NULL else con,
-        companies_df = companies_df
+        companies_df = companies_df,
+        theme = theme_test
     )
 }
 
