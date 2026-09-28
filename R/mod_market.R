@@ -329,7 +329,10 @@ market_reactable_theme <- function(theme = NULL) {
         borderColor     = border,
         highlightColor  = if (dark) "rgba(255, 255, 255, 0.15)"
                           else "rgba(0, 0, 0, 0.08)",
-        stripedColor    = if (dark) "rgba(255, 255, 255, 0.03)"
+        # stripedColor : couleur OPAQUE de l'alternance des lignes. Un rgba
+        # semi-transparent peut être rendu en blanc opaque par reactable sur
+        # fond sombre, rendant le texte blanc illisible.
+        stripedColor    = if (dark) lighten_hex(bg, 0.04)
                           else "rgba(0, 0, 0, 0.03)",
         headerStyle     = list(
             backgroundColor = if (dark) "rgba(255, 255, 255, 0.06)"
@@ -358,6 +361,25 @@ luminance <- function(col) {
     if (!grepl("^[0-9a-fA-F]{6}$", hex)) return(1)
     rgb_vals <- strtoi(substring(hex, c(1, 3, 5), c(2, 4, 6)), base = 16)
     (0.299 * rgb_vals[1] + 0.587 * rgb_vals[2] + 0.114 * rgb_vals[3]) / 255
+}
+
+#' Éclaircir une couleur hexadécimale (mélange avec du blanc)
+#'
+#' @param col Couleur hexadécimale (ex. `"#222"`).
+#' @param amount Fraction de blanc à ajouter (entre 0 et 1).
+#' @return Une couleur hexadécimale opaque éclaircie.
+#' @noRd
+lighten_hex <- function(col, amount = 0.05) {
+    hex <- gsub("#", "", col)
+    if (grepl("^[0-9a-fA-F]{3}$", hex)) {
+        hex <- paste0(substring(hex, 1, 1), substring(hex, 1, 1),
+                      substring(hex, 2, 2), substring(hex, 2, 2),
+                      substring(hex, 3, 3), substring(hex, 3, 3))
+    }
+    if (!grepl("^[0-9a-fA-F]{6}$", hex)) return(col)
+    rgb_vals <- strtoi(substring(hex, c(1, 3, 5), c(2, 4, 6)), base = 16)
+    mix <- round(rgb_vals + (255 - rgb_vals) * amount)
+    sprintf("#%02X%02X%02X", mix[1], mix[2], mix[3])
 }
 
 #' Fond des mini-tables (niveaux imbriqués) selon le mode sombre/clair
