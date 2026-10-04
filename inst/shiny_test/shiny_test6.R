@@ -15,6 +15,7 @@ library(RPostgres)
 library(lubridate)
 library(s3db)
 devtools::load_all()
+document()
 
 # Connexion PostgreSQL
 s3_connection_HL(config_path = "../app/data")

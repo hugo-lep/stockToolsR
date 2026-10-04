@@ -46,14 +46,22 @@ build_quality_build2 <- function(con) {
         dplyr::mutate(
             date           = as.Date(date),
             filingdate     = as.Date(filingdate),
-            roa            = is_netincome / bs_totalassets,
-            roe            = is_netincome / bs_totalstockholdersequity,
+            # ROA/ROE : NA si actifs ou capitaux propres <= 0 (sinon ratio
+            # faussé/explosé avec un dénominateur négatif ou nul)
+            roa            = dplyr::if_else(
+                !is.na(bs_totalassets) & bs_totalassets > 0,
+                is_netincome / bs_totalassets, NA_real_),
+            roe            = dplyr::if_else(
+                !is.na(bs_totalstockholdersequity) & bs_totalstockholdersequity > 0,
+                is_netincome / bs_totalstockholdersequity, NA_real_),
             ratio_courant  = bs_totalcurrentassets / bs_totalcurrentliabilities,
             fcf_rev        = dplyr::if_else(
                 !is.na(is_revenue) & is_revenue != 0,
                 cf_freecashflow / is_revenue, NA_real_),
+            # Couverture d'intérêts : NA si intérêts ou EBIT <= 0
             couv_interet   = dplyr::if_else(
-                !is.na(is_interestexpense) & is_interestexpense > 0,
+                !is.na(is_interestexpense) & is_interestexpense > 0 &
+                    !is.na(is_ebit) & is_ebit > 0,
                 is_ebit / is_interestexpense, NA_real_),
             d_actif        = dplyr::if_else(
                 !is.na(bs_totalassets) & bs_totalassets != 0,
@@ -64,19 +72,30 @@ build_quality_build2 <- function(con) {
         )
 
     # [2/5] Moyennes ROA / ROE sur les 5 dernières périodes
+    # On moyenne la MÊME période que la ligne la plus récente de chaque
+    # symbol (ex: si le plus récent est Q3 → les 5 derniers Q3). Cela évite de
+    # mélanger les granularités (Q1 vs Q2 vs FY). NA si moins de 3 valeurs.
     message("  [2/5] Calcul ROA/ROE moyens (5 dernières périodes)...")
 
     stmts_moy5 <- dplyr::tbl(con, dbplyr::in_schema("stocktools", "financial_stmts_build")) |>
-        dplyr::select(symbol, date, is_netincome,
+        dplyr::select(symbol, date, period, is_netincome,
                       bs_totalassets, bs_totalstockholdersequity) |>
         dplyr::collect() |>
         dplyr::mutate(date = as.Date(date)) |>
         dplyr::arrange(symbol, dplyr::desc(date)) |>
         dplyr::group_by(symbol) |>
+        dplyr::mutate(period_ref = dplyr::first(period)) |>
+        dplyr::filter(period == period_ref) |>
         dplyr::slice_head(n = 5) |>
         dplyr::summarise(
-            roa_moy5 = mean(is_netincome / bs_totalassets,             na.rm = TRUE),
-            roe_moy5 = mean(is_netincome / bs_totalstockholdersequity, na.rm = TRUE),
+            roa_moy5 = dplyr::if_else(
+                dplyr::n() >= 3,
+                mean(is_netincome / bs_totalassets,             na.rm = TRUE),
+                NA_real_),
+            roe_moy5 = dplyr::if_else(
+                dplyr::n() >= 3,
+                mean(is_netincome / bs_totalstockholdersequity, na.rm = TRUE),
+                NA_real_),
             .groups  = "drop"
         )
 

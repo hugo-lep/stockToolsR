@@ -377,6 +377,12 @@ mod_finance6_server <- function(id, con) {
                 last_irregular_date = as.Date(last_irregular_date)
             )
 
+        message("  [2.5/5] qts_income_stmts_orig (filingdate)...")
+        stmts_build <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "qts_income_stmts_orig")) |>
+            dplyr::select(symbol, filingdate) |>
+            dplyr::mutate(filingdate = as.Date(filingdate)) |>
+            dplyr::distinct()
+
         message("  [3/5] cagr_stmts_build + cagr_price_build...")
         cagr_stmts <- DBI::dbReadTable(con, DBI::Id(schema = "stocktools", table = "cagr_stmts_build")) |>
             dplyr::select(symbol, dplyr::starts_with("cagr_"))
@@ -1004,6 +1010,21 @@ mod_finance6_server <- function(id, con) {
 
             if (nrow(df_plot) == 0) return(NULL)
 
+            der <- df_plot |> dplyr::slice_tail(n = 1)
+
+            dates_stmts <- stmts_build |>
+                dplyr::filter(symbol == input$symbol,
+                              filingdate >= min(df_plot$date),
+                              filingdate <= max(df_plot$date)) |>
+                dplyr::pull(filingdate) |>
+                unique()
+
+            ann_txt <- paste0(
+                "Buy  ", scales::dollar(der$buy,  accuracy = 0.01), "   ",
+                "Sell ", scales::dollar(der$sell, accuracy = 0.01), "   ",
+                "Close ", scales::dollar(der$close, accuracy = 0.01)
+            )
+
             ggplot2::ggplot(df_plot, ggplot2::aes(x = date)) +
                 ggplot2::geom_ribbon(ggplot2::aes(ymin = buy, ymax = caution),
                                      fill = "#198754", alpha = 0.15) +
@@ -1017,6 +1038,13 @@ mod_finance6_server <- function(id, con) {
                                    colour = "#dc3545", linewidth = 0.7) +
                 ggplot2::geom_line(ggplot2::aes(y = close),
                                    colour = "black", linewidth = 1.1) +
+                ggplot2::geom_vline(xintercept = dates_stmts,
+                                    colour = "#0d6efd", linewidth = 0.6,
+                                    linetype = "dashed") +
+                ggplot2::annotate("text",
+                                  x = max(df_plot$date), y = Inf,
+                                  label = ann_txt, hjust = 1, vjust = 1.5,
+                                  size = 3.5, colour = "#4a4a4a", fontface = "bold") +
                 ggplot2::scale_y_continuous(labels = scales::dollar) +
                 ggplot2::labs(x = NULL, y = NULL) +
                 ggplot2::theme_minimal(base_size = 10) +

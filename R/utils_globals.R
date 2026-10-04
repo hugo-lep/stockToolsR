@@ -24,7 +24,7 @@ utils::globalVariables(c(
   "cf_freecashflow", "cf_stockbasedcompensation",
 
   # ── Colonnes générales états financiers ───────────────────────────────────────
-  "period", "period2", "filingdate", "accepteddate", "fiscalyear",
+  "period", "period2", "period_ref", "filingdate", "accepteddate", "fiscalyear",
 
   # ── Ratios de qualité calculés ────────────────────────────────────────────────
   "marge_brute", "marge_ebitda", "marge_nette", "fcf_rev", "ratio_courant",

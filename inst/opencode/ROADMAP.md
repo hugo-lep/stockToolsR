@@ -66,6 +66,8 @@ Réécriture complète du pipeline dans `inst/script2/` : c'est maintenant la ve
 - [ ] Validation post-`tidy_stmts()` sur quelques grandes compagnies (AAPL, MSFT)
   - Vérifier que les valeurs TTM reconstruites sont cohérentes (ex: via `assertr`)
 
+- [ ] **Compagnies sous-alimentées dans `financial_stmts_build`** (observé 2026-10 : HONA n'a qu'une seule ligne FY 2025-12-31 alors qu'on est en octobre 2026). Investiguer pourquoi certaines compagnies ont très peu de lignes malgré l'import 04 (données FMP incomplètes, split/re-import, anomalie 04→06). Impact direct sur les CAGR (horizons longs → NA faute d'historique).
+
 ---
 
 ## Périmètre des compagnies

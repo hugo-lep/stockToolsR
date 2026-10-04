@@ -75,7 +75,7 @@ tidy_stmts2 <- function(con,
                 ~ slider::slide_sum(., before = 3, complete = TRUE)
             )
         ) |>
-        dplyr::arrange(symbol, dplyr::desc(date)) |>
+        dplyr::arrange(symbol, date) |>
         dplyr::slice(-(1:min(3, dplyr::n()))) |>
         dplyr::ungroup()
 
@@ -142,7 +142,7 @@ tidy_stmts2 <- function(con,
                 ~ slider::slide_sum(., before = 3, complete = TRUE)
             )
         ) |>
-        dplyr::arrange(symbol, dplyr::desc(date)) |>
+        dplyr::arrange(symbol, date) |>
         dplyr::slice(-(1:min(3, dplyr::n()))) |>
         dplyr::ungroup()
 
@@ -170,18 +170,9 @@ tidy_stmts2 <- function(con,
         )
 
     # Pour chaque symbol, détecter la period de la ligne la plus récente
-    period_ref <- final |>
-        dplyr::group_by(symbol) |>
-        dplyr::slice_max(date, n = 1, with_ties = FALSE) |>
-        dplyr::ungroup() |>
-        dplyr::select(symbol, period_ref = period)
-
-    # Ne conserver que les lignes dont la period correspond à la référence
-    final <- final |>
-        dplyr::left_join(period_ref, by = "symbol") |>
-        dplyr::filter(period == period_ref) |>
-        dplyr::select(-period_ref)
-
+    # NOTE : le filtre `period == period_ref` (qui réduisait la série à une
+    # seule période, ex. FY uniquement) a été retiré pour conserver des
+    # rapports TTM à tous les trimestres (4/an). Voir points_releves.md.
     final <- final |>
         dplyr::mutate(
             m_brut   = is_grossprofit / is_revenue,
